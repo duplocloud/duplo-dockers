@@ -25,7 +25,7 @@ echo "spark_master_ip = ${master} xms = ${xms} xms = ${xmx} ${SPARK_OPTS}"
 echo "SPARK_OPTS ${SPARK_OPTS} after "
 ############################## enable max memory option : default : Xms1024M Xmx4096M ########################
 
-cd /opt/spark/bin
+#cd /opt/spark/bin
 
 #if [[ "x$master" != "x" ]]; then
 #  export spark_master=${master}
@@ -36,8 +36,8 @@ export spark_master=${master}
 echo "spark.master spark://${master}:7077" >> /opt/spark/conf/spark-defaults.conf
 
 mkdir -p /home/ubuntu/work
-cd work
-jupyter notebook
+cd /home/ubuntu/work
+jupyter notebook -ip 0.0.0.0
 
 
 while :

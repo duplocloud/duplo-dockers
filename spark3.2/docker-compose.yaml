@@ -37,7 +37,7 @@ services:
       - spark-master:spark-master
 
   spark-notebook1:
-    image: duplocloud/anyservice:spark_3_2_v3
+    image: duplocloud/anyservice:spark_3_2_notebook_v3
     hostname: spark-notebook1
     restart: always
     depends_on:

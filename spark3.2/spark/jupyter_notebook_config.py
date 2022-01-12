@@ -1,7 +1,7 @@
 
 # Configuration file for jupyter-notebook.
 
-from conda.paths import jupyter_data_dir
+# from conda.paths import jupyter_data_dir
 import subprocess
 import os
 import errno
@@ -1392,10 +1392,10 @@ c = get_config()  # noqa: F821
 # c.NotebookApp.certfile = u'/absolute/path/to/your/certificate/mycert.pem'
 # c.NotebookApp.keyfile = u'/absolute/path/to/your/certificate/mykey.key'
 
-c.NotebookApp.ip = "0.0.0.0"
+# c.NotebookApp.ip = "0.0.0.0"
 c.NotebookApp.port = 8888
 # c.NotebookApp.open_browser = False
-# c.NotebookApp.ip = '*'
+c.NotebookApp.ip = '*'
 c.NotebookApp.token = ''
 c.NotebookApp.password = ''
 c.NotebookApp.open_browser = False
