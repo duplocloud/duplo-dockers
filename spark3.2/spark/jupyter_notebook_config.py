@@ -1,7 +1,7 @@
 
 # Configuration file for jupyter-notebook.
 
-from jupyter_core.paths import jupyter_data_dir
+from conda.paths import jupyter_data_dir
 import subprocess
 import os
 import errno
