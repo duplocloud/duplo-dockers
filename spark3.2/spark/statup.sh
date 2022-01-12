@@ -25,25 +25,29 @@ echo "spark_master_ip = ${master} xms = ${xms} xms = ${xmx} ${SPARK_OPTS}"
 echo "SPARK_OPTS ${SPARK_OPTS} after "
 ############################## enable max memory option : default : Xms1024M Xmx4096M ########################
 
-cd /opt/spark/bin
-if [[ "x$DUPLO_SPARK_NODE_TYPE" != "x" ]]; then
-    if [ "$DUPLO_SPARK_NODE_TYPE" = "worker" ]
-    then
-        cd /opt/spark/bin && ./spark-class org.apache.spark.deploy.worker.Worker \
-           --webui-port $SPARK_WORKER_WEBUI_PORT spark://$master:7077 >> $SPARK_WORKER_LOG
-    else
-      cd /opt/spark/bin && ./spark-class org.apache.spark.deploy.master.Master \
-            -h $master --port $SPARK_MASTER_PORT --webui-port $SPARK_MASTER_WEBUI_PORT >> $SPARK_MASTER_LOG
-    fi
-else
-      cd /opt/spark/bin && ./spark-class org.apache.spark.deploy.master.Master \
-            -h $master --port $SPARK_MASTER_PORT --webui-port $SPARK_MASTER_WEBUI_PORT >> $SPARK_MASTER_LOG
-fi
-
-
-
 while :
 do
+    echo "=========DUPLO_SPARK_NODE_TYPE ================ starting $DUPLO_SPARK_NODE_TYPE $master  ==============================="
+    cd /opt/spark/bin
+    if [[ "x$DUPLO_SPARK_NODE_TYPE" != "x" ]]; then
+        if [ "$DUPLO_SPARK_NODE_TYPE" = "worker" ]
+        then
+            echo "cd /opt/spark/bin && ./spark-class org.apache.spark.deploy.worker.Worker  --webui-port $SPARK_WORKER_WEBUI_PORT spark://$master:7077 >> $SPARK_WORKER_LOG"
+            cd /opt/spark/bin && ./spark-class org.apache.spark.deploy.worker.Worker \
+               --webui-port $SPARK_WORKER_WEBUI_PORT spark://$master:7077 >> $SPARK_WORKER_LOG
+        else
+          echo"cd /opt/spark/bin && ./spark-class org.apache.spark.deploy.master.Master   -h $master --port $SPARK_MASTER_PORT --webui-port $SPARK_MASTER_WEBUI_PORT >> $SPARK_MASTER_LOG"
+          cd /opt/spark/bin && ./spark-class org.apache.spark.deploy.master.Master \
+                -h $master --port $SPARK_MASTER_PORT --webui-port $SPARK_MASTER_WEBUI_PORT >> $SPARK_MASTER_LOG
+        fi
+    else
+          cd /opt/spark/bin && ./spark-class org.apache.spark.deploy.master.Master \
+                -h $master --port $SPARK_MASTER_PORT --webui-port $SPARK_MASTER_WEBUI_PORT >> $SPARK_MASTER_LOG
+          echo"cd /opt/spark/bin && ./spark-class org.apache.spark.deploy.master.Master   -h $master --port $SPARK_MASTER_PORT --webui-port $SPARK_MASTER_WEBUI_PORT >> $SPARK_MASTER_LOG"
+    fi
+
+    echo "========DUPLO_SPARK_NODE_TYPE ================= DONE  $DUPLO_SPARK_NODE_TYPE $master   ==============================="
+
 	echo "Press [CTRL+C] to stop.."
 	sleep 5
 done

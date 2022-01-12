@@ -65,6 +65,8 @@ EXPOSE 8080 7077 6066 8888
 RUN groupadd --gid 1000 ubuntu \
     && useradd --uid 1000 --gid ubuntu --shell /bin/bash --create-home ubuntu
 
+RUN mkdir /opt/spark/work
+
 WORKDIR /home/ubuntu
 
 # app
@@ -74,6 +76,7 @@ WORKDIR /home/ubuntu
 COPY *.sh .
 RUN chmod +x *.sh
 COPY spark-defaults.conf /opt/spark/conf/spark-defaults.conf
+RUN mkdir work
 
 USER ubuntu
 RUN mkdir /home/ubuntu/.jupyter
