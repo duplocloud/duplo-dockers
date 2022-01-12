@@ -15,6 +15,10 @@ USER root
 COPY *.sh .
 RUN chmod +x *.sh
 
+# jupyter
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
 
 USER ubuntu
 CMD ["/bin/bash", "/home/ubuntu/jupyter_statup.sh"]

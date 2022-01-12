@@ -62,7 +62,8 @@ ln -sf /dev/stdout $SPARK_MASTER_LOG && \
 ln -sf /dev/stdout $SPARK_WORKER_LOG
 
 # jupyter
-RUN pip install jupyter
+COPY requirements.txt .
+RUN pip install -r requirements.txt
 
 EXPOSE 8080 7077 6066 8888
 
