@@ -55,10 +55,6 @@ RUN wget https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/${HADOOP_VE
 COPY ./elasticsearch-hadoop-7.16.2/dist/elasticsearch-spark-20_2.11-7.16.2.jar ${SPARK_HOME}/jars/
 
 #  docker logs
-ENV SPARK_LOG_DIR=/opt/spark/logs
-ENV SPARK_MASTER_LOG=/opt/spark/logs/spark-master.out
-ENV SPARK_WORKER_LOG=/opt/spark/logs/spark-worker.out
-
 RUN mkdir -p $SPARK_LOG_DIR && \
 touch $SPARK_MASTER_LOG && \
 touch $SPARK_WORKER_LOG && \
@@ -72,40 +68,37 @@ RUN pip install -r requirements.txt
 EXPOSE 8080 7077 6066 8888
 
 
-RUN mkdir -p /opt/spark/work
+RUN mkdir /opt/spark/work
 
-
-#WORKDIR /home/ubuntu
+WORKDIR /home/ubuntu
 
 # app
-WORKDIR /opt/spark
+#WORKDIR /opt/spark
 
 # code
 COPY *.sh .
 RUN chmod +x *.sh
 COPY spark-defaults.conf /opt/spark/conf/spark-defaults.conf
-#RUN mkdir -p work
+RUN mkdir work
 
-#RUN chown -R ubuntu:ubuntu  /opt/spark
-#RUN chown -R ubuntu:ubuntu  /home/ubuntu
+RUN chown -R ubuntu:ubuntu  /opt/spark
+RUN chown -R ubuntu:ubuntu  /home/ubuntu
 
-#
-### ubuntu user
+
+## ubuntu user
+RUN apt-get update && apt-get install -y sudo
+#RUN groupadd --gid 1000 ubuntu \
+#    && useradd --uid 1000 --gid ubuntu --shell /bin/bash --create-home ubuntu
 #RUN apt-get update && apt-get install -y sudo
-##RUN groupadd --gid 1000 ubuntu \
-##    && useradd --uid 1000 --gid ubuntu --shell /bin/bash --create-home ubuntu
-##RUN apt-get update && apt-get install -y sudo
-##RUN adduser --disabled-password --gecos '' docker
-#RUN adduser ubuntu sudo
-#RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+#RUN adduser --disabled-password --gecos '' docker
+RUN adduser ubuntu sudo
+RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
-#USER ubuntu
+USER ubuntu
+RUN mkdir /home/ubuntu/.jupyter
+COPY jupyter_notebook_config.py /home/ubuntu/.jupyter/.
 
-RUN mkdir -p $SPARK_LOG_DIR
-RUN mkdir -p ~/.jupyter
-COPY jupyter_notebook_config.py ~/.jupyter/.
-
-CMD ["/bin/bash", "/opt/spark/statup.sh"]
+CMD ["/bin/bash", "/home/ubuntu/statup.sh"]
 
 # docker build -t spark32 .
 # docker run -itd -p8888:8888 -p8080:8080 -p7077:7077 -p6066:6066 spark32
