@@ -24,6 +24,9 @@ export SPARK_OPTS="--driver-java-options=-Xms${xms} --driver-java-options=-Xmx${
 echo "spark_master_ip = ${master} xms = ${xms} xms = ${xmx} ${SPARK_OPTS}"
 echo "SPARK_OPTS ${SPARK_OPTS} after "
 ############################## enable max memory option : default : Xms1024M Xmx4096M ########################
+mkdir -p $SPARK_LOG_DIR
+touch $SPARK_WORKER_LOG
+touch $SPARK_MASTER_LOG
 
 while :
 do

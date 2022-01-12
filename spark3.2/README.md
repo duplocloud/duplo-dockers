@@ -15,7 +15,8 @@
 ### docker-compose 
 ```shell
 cd /Users/brighu/_duplo_code/duplo-dockers/spark3.2
-docker-compose_run.sh
+
+docker-compose_run.sh 
 ```
 
 
