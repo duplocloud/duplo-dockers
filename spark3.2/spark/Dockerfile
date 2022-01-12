@@ -19,10 +19,15 @@ ENV  PYTHONHASHSEED=1
 #ENV SPARK_MASTER="spark://127.0.0.1:7077"
 #ENV SPARK_WORKLOAD="master"
 
+## ubuntu user
+RUN groupadd --gid 1000 ubuntu \
+    && useradd --uid 1000 --gid ubuntu --shell /bin/bash --create-home ubuntu
+
+
 ENV SPARK_HOME=/opt/spark
-ENV SPARK_LOG_DIR=/opt/spark/logs
-ENV SPARK_MASTER_LOG=/opt/spark/logs/spark-master.out
-ENV SPARK_WORKER_LOG=/opt/spark/logs/spark-worker.out
+ENV SPARK_LOG_DIR=/home/ubuntu/logs
+ENV SPARK_MASTER_LOG=/home/ubuntu/logs/spark-master.out
+ENV SPARK_WORKER_LOG=/home/ubuntu/logs/spark-worker.out
 ENV PATH $SPARK_HOME/bin/:$PATH
 ENV PYTHONPATH $SPARK_HOME/python:$SPARK_HOME/python/lib/py4j-0.10.9.2-src.zip
 
@@ -61,9 +66,6 @@ RUN pip install jupyter
 
 EXPOSE 8080 7077 6066 8888
 
-## ubuntu user
-RUN groupadd --gid 1000 ubuntu \
-    && useradd --uid 1000 --gid ubuntu --shell /bin/bash --create-home ubuntu
 
 RUN mkdir /opt/spark/work
 
@@ -77,6 +79,8 @@ COPY *.sh .
 RUN chmod +x *.sh
 COPY spark-defaults.conf /opt/spark/conf/spark-defaults.conf
 RUN mkdir work
+
+RUN chown -R ubuntu:ubuntu  /home/ubuntu
 
 USER ubuntu
 RUN mkdir /home/ubuntu/.jupyter

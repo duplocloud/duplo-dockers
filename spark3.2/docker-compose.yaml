@@ -1,56 +1,34 @@
-version: "3.7"
-networks:
-  spark-network:
-    name: spark-network
-    driver: bridge
+version: "2"
+
 services:
   spark-master:
     image: duplocloud/anyservice:spark_3_2_v3
-    container_name: spark-master
     hostname: spark-master
-    networks:
-      - spark-network
-    volumes:
-      - "./code:/home/ubuntu/work"
+    restart: always
     ports:
       - "8080:8080"
       - "7077:7077"
       - "4040:4040"
-    environment:
+    volumes:
+      - "./code:/home/ubuntu/work"
+      - "./logs-master:/home/ubuntu/logs"
+        environment:
       - DUPLO_SPARK_MASTER_IP="0.0.0.0"
       - DUPLO_SPARK_NODE_TYPE=master
     command:
       - /home/ubuntu/statup.sh
 
-  spark-worker:
-    image: duplocloud/anyservice:spark_3_2_v3
-    container_name: spark-worker
-    hostname: spark-worker
-    networks:
-      - spark-network
-    depends_on:
-      - spark-master
-    ports:
-      - "8081:8081"
-    environment:
-      - DUPLO_SPARK_MASTER_IP=spark-master
-      - DUPLO_SPARK_NODE_TYPE=worker
-    command:
-      - /home/ubuntu/statup.sh
-
-#  spark-notebook:
-#    image: duplocloud/anyservice:spark_3_2_notebook_v3
-#    networks:
-#      - spark-network
+#
+#  spark-worker:
+#    image: duplocloud/anyservice:spark_3_2_v3
+#    hostname: spark-worker
+#    restart: always
 #    depends_on:
 #      - spark-master
-#      - spark-worker
-#    volumes:
-#      - "./code:/home/ubuntu/work"
 #    ports:
-#      - "8888:8888"
+#      - "8081:8081"
 #    environment:
 #      - DUPLO_SPARK_MASTER_IP=spark-master
-#    command:
-#      - /home/ubuntu/jupyter_statup.sh
-
+#      - DUPLO_SPARK_NODE_TYPE=worker
+#    links:
+#      - spark-master:spark-master

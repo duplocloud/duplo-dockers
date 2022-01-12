@@ -106,3 +106,4 @@ ENV/
 _delother/
 _tmp
 code/
+logs/
