@@ -2,7 +2,7 @@ version: "3.7"
 
 services:
   spark-master:
-    image: duplocloud/anyservice:spark_3_2_v3
+    image: duplocloud/anyservice:spark_3_2_v4
     hostname: spark-master
     restart: always
     ports:
@@ -15,12 +15,13 @@ services:
     environment:
       - DUPLO_SPARK_MASTER_IP=0.0.0.0
       - DUPLO_SPARK_NODE_TYPE=master
-#    command:
+      - LOCAL_DOCKER_HOST=true
+    #    command:
 #      - /home/ubuntu/statup.sh
 
 
   spark-worker1:
-    image: duplocloud/anyservice:spark_3_2_v3
+    image: duplocloud/anyservice:spark_3_2_v4
     hostname: spark-worker1
     restart: always
     depends_on:
@@ -34,11 +35,12 @@ services:
     environment:
       - DUPLO_SPARK_MASTER_IP=spark-master
       - DUPLO_SPARK_NODE_TYPE=worker
+      - LOCAL_DOCKER_HOST=true
     links:
       - spark-master:spark-master
 
   spark-notebook1:
-    image: duplocloud/anyservice:spark_3_2_notebook_v3
+    image: duplocloud/anyservice:spark_3_2_notebook_v4
     hostname: spark-notebook1
     restart: always
     depends_on:
@@ -51,5 +53,6 @@ services:
       - "./logs/notebook:/home/ubuntu/logs"
     environment:
       - DUPLO_SPARK_MASTER_IP=spark-master
+      - LOCAL_DOCKER_HOST=true
     links:
       - spark-master:spark-master

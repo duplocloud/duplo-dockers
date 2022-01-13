@@ -1,4 +1,4 @@
-FROM  duplocloud/anyservice:spark_3_2_v3
+FROM  duplocloud/anyservice:spark_3_2_v4
 #
 #ARG JUPYTERLAB_VERSION=2.1.5
 #

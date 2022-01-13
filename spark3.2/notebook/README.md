@@ -1,24 +1,24 @@
 ### build  spark
 * cd spark3.2/spark
-* docker build -t duplocloud/anyservice:spark_3_2_v1 .
+* docker build -t duplocloud/anyservice:spark_3_2_v4 .
 ### push
 * docker login
-* docker push duplocloud/anyservice:spark_3_2_v1
+* docker push duplocloud/anyservice:spark_3_2_v4
 
 ### build  spark notebook
 * cd spark3.2/notebook
-* docker build -t duplocloud/anyservice:spark_3_2_notebook_v1 .
+* docker build -t duplocloud/anyservice:spark_3_2_notebook_v4 .
 ### push
 * docker login
-* docker push duplocloud/anyservice:spark_3_2_notebook_v1
+* docker push duplocloud/anyservice:spark_3_2_notebook_v4
 
 
 ### run master
-* docker run -itd -p8888:8888 -p8080:8080 -p7077:7077 -p6066:6066   -e DUPLO_SPARK_MASTER_IP 0.0.0.0 -e DUPLO_SPARK_NODE_TYPE master duplocloud/anyservice:spark_3_2_v1
+* docker run -itd -p8888:8888 -p8080:8080 -p7077:7077 -p6066:6066   -e DUPLO_SPARK_MASTER_IP 0.0.0.0 -e DUPLO_SPARK_NODE_TYPE master duplocloud/anyservice:spark_3_2_v4
 ### run slave
-*  docker run -itd -p8888:8888 -p8080:8080 -p7077:7077  -p6066:6066  -e DUPLO_SPARK_MASTER_IP 0.0.0.0 -e DUPLO_SPARK_NODE_TYPE worker duplocloud/anyservice:spark_3_2_v1
+*  docker run -itd -p8888:8888 -p8080:8080 -p7077:7077  -p6066:6066  -e DUPLO_SPARK_MASTER_IP 0.0.0.0 -e DUPLO_SPARK_NODE_TYPE worker duplocloud/anyservice:spark_3_2_v4
 ### run notebook
-*  docker run -itd -p8888:8888 -p8080:8080 -p7077:7077  -p6066:6066  -e DUPLO_SPARK_MASTER_IP 0.0.0.0 -e DUPLO_SPARK_NODE_TYPE worker duplocloud/anyservice:spark_3_2_notebook_v1
+*  docker run -itd -p8888:8888 -p8080:8080 -p7077:7077  -p6066:6066  -e DUPLO_SPARK_MASTER_IP 0.0.0.0 -e DUPLO_SPARK_NODE_TYPE worker duplocloud/anyservice:spark_3_2_notebook_v4
 
 
 

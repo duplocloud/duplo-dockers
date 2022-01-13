@@ -1,29 +1,29 @@
 ### build  spark
 * cd spark3.2/spark
-* docker build -t duplocloud/anyservice:spark_3_2_v1 .
+* docker build -t duplocloud/anyservice:spark_3_2_v4 .
 ### push
 * docker login
-* docker push duplocloud/anyservice:spark_3_2_v1
+* docker push duplocloud/anyservice:spark_3_2_v4
 
 ### build  spark notebook
 * cd spark3.2/notebook
-* docker build -t duplocloud/anyservice:spark_3_2_notebook_v1 .
+* docker build -t duplocloud/anyservice:spark_3_2_notebook_v4 .
 ### push
 * docker login
-* docker push duplocloud/anyservice:spark_3_2_notebook_v1
+* docker push duplocloud/anyservice:spark_3_2_notebook_v4
 
 
 ### run master
 ````text
 
 /Users/brighu/_duplo_code/duplo-dockers/spark3.2/code or relative path  by cd /Users/brighu/_duplo_code/duplo-dockers/spark3.2/code
-docker run -itd -p8888:8888 -p8080:8080 -p7077:7077 -p6066:6066 -v code:/home/ubuntu/work  -e DUPLO_SPARK_MASTER_IP 0.0.0.0 -e DUPLO_SPARK_NODE_TYPE master duplocloud/anyservice:spark_3_2_v1
+docker run -itd -p8888:8888 -p8080:8080 -p7077:7077 -p6066:6066 -v code:/home/ubuntu/work  -e DUPLO_SPARK_MASTER_IP 0.0.0.0 -e DUPLO_SPARK_NODE_TYPE master duplocloud/anyservice:spark_3_2_v4
 
 
 (base) brighu:spark3.2 brighu$ docker ps 
 >>>>
 CONTAINER ID   IMAGE                                COMMAND                  CREATED              STATUS              PORTS                                                                                                                                                                        NAMES
-d49d8c0b7ff7   duplocloud/anyservice:spark_3_2_v1   "/usr/local/bin/tini…"   About a minute ago   Up About a minute   0.0.0.0:6066->6066/tcp, :::6066->6066/tcp, 0.0.0.0:7077->7077/tcp, :::7077->7077/tcp, 0.0.0.0:8080->8080/tcp, :::8080->8080/tcp, 0.0.0.0:8888->8888/tcp, :::8888->8888/tcp   elated_chaplygin
+d49d8c0b7ff7   duplocloud/anyservice:spark_3_2_v4   "/usr/local/bin/tini…"   About a minute ago   Up About a minute   0.0.0.0:6066->6066/tcp, :::6066->6066/tcp, 0.0.0.0:7077->7077/tcp, :::7077->7077/tcp, 0.0.0.0:8080->8080/tcp, :::8080->8080/tcp, 0.0.0.0:8888->8888/tcp, :::8888->8888/tcp   elated_chaplygin
 
 ============
 (base) brighu:spark3.2 brighu$ docker logs d49d8c0b7ff7
@@ -56,14 +56,14 @@ unix  2      [ ]         STREAM     CONNECTED     364486
 ubuntu@d49d8c0b7ff7:~$ 
 
 ```` 
-* docker run -itd -p8080:8080 -p7077:7077 -p6066:6066 -v code:/home/ubuntu/work  -e DUPLO_SPARK_MASTER_IP=0.0.0.0 -e DUPLO_SPARK_NODE_TYPE=master duplocloud/anyservice:spark_3_2_v3
+* docker run -itd -p8080:8080 -p7077:7077 -p6066:6066 -v code:/home/ubuntu/work  -e DUPLO_SPARK_MASTER_IP=0.0.0.0 -e DUPLO_SPARK_NODE_TYPE=master duplocloud/anyservice:spark_3_2_v4
 
 * ## run slave
-* docker run -itd   -v code:/home/ubuntu/work  -e DUPLO_SPARK_MASTER_IP=0.0.0.0 -e DUPLO_SPARK_NODE_TYPE=worker duplocloud/anyservice:spark_3_2_v3
+* docker run -itd   -v code:/home/ubuntu/work  -e DUPLO_SPARK_MASTER_IP=0.0.0.0 -e DUPLO_SPARK_NODE_TYPE=worker duplocloud/anyservice:spark_3_2_v4
 
-* docker run -itd   -p6066:6066  -e DUPLO_SPARK_MASTER_IP=0.0.0.0 -e DUPLO_SPARK_NODE_TYPE=worker duplocloud/anyservice:spark_3_2_v3
+* docker run -itd   -p6066:6066  -e DUPLO_SPARK_MASTER_IP=0.0.0.0 -e DUPLO_SPARK_NODE_TYPE=worker duplocloud/anyservice:spark_3_2_v4
 ### run notebook
-*  docker run -itd -p8888:8888 -p8080:8080 -p7077:7077  -p6066:6066  -e DUPLO_SPARK_MASTER_IP 0.0.0.0 -e duplocloud/anyservice:spark_3_2_notebook_v1
+*  docker run -itd -p8888:8888 -p8080:8080 -p7077:7077  -p6066:6066  -e DUPLO_SPARK_MASTER_IP 0.0.0.0 -e duplocloud/anyservice:spark_3_2_notebook_v4
 
 
 

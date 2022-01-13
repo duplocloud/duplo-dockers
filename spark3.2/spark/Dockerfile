@@ -85,9 +85,10 @@ RUN apt-get update && apt-get install -y sudo
 #RUN groupadd --gid 1000 ubuntu \
 #    && useradd --uid 1000 --gid ubuntu --shell /bin/bash --create-home ubuntu
 #RUN apt-get update && apt-get install -y sudo
-#RUN adduser --disabled-password --gecos '' docker
+
+RUN #adduser --disabled-password --gecos '' ubuntu
 RUN adduser ubuntu sudo
-RUN echo '%sudo ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
+RUN echo 'ubuntu ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers
 
 USER ubuntu
 RUN mkdir /home/ubuntu/.jupyter
