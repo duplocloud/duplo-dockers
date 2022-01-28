@@ -11,8 +11,24 @@
 ### push
 * docker login
 * docker push duplocloud/anyservice:spark_3_2_notebook_v4
+```shell
+
+./spark-submit --deploy-mode cluster --master spark://10.202.1.65:7077 --class org.apache.spark.examples.JavaWordCount /opt/spark/examples/jars/spark-examples_2.12-3.2.0.jar 
+./spark-submit --deploy-mode cluster --master spark://10.202.1.65:7077 --supervise --class org.apache.spark.examples.JavaWordCount /opt/spark/examples/jars/spark-examples_2.12-3.2.0.jar   /opt/spark/examples/src/main/java/org/apache/spark/examples/JavaPageRank.java
+./spark-submit --deploy-mode cluster --master spark://10.202.1.65:7077 /opt/spark/examples/src/main/python/pi.py 
+
+cron action : 3 steps
+1- creating cluster
+    ./script/apply.sh sparkdemo spark
+2- submit ( python connecting to cluster)
+3- destroy cluster
+    ./script/destory.sh sparkdemo spark
+
+driver( client == submitter) (4GB) + master + distriobuted execution (salves)
+driver( cluster == random spark cluster e.g. one of the slaves) (4GB) + master + distriobuted execution (salves)
 
 
+```
 ### run master
 ````text
 

@@ -101,6 +101,10 @@ ENV/
 # mypy
 .mypy_cache/
 
+*.tfstate
+.terraform/
+.terraform*
+
 .idea/
 
 _delother/
