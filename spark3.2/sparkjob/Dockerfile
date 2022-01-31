@@ -1,27 +1,25 @@
-FROM  duplocloud/anyservice:spark_3_2_v4
-#
-#ARG JUPYTERLAB_VERSION=2.1.5
-#
-#RUN apt-get update -y && \
-#    # apt-get install -y python3-pip && \
-#    pip3 install wget pyspark==${SPARK_VERSION} jupyterlab==${JUPYTERLAB_VERSION}
-#
-#ENV SHARED_WORKSPACE=/data
-#EXPOSE 8888
-#WORKDIR ${SHARED_WORKSPACE}
-#CMD jupyter lab --ip=0.0.0.0 --port=8888 --no-browser --allow-root --NotebookApp.token=
-
+FROM  duplocloud/anyservice:spark_3_2_v6
 USER root
+RUN apt-get update -y
+RUN apt-get install -y unzip  wget  vim
+
+
+###
+RUN wget https://releases.hashicorp.com/terraform/1.1.4/terraform_1.1.4_linux_arm64.zip
+RUN unzip terraform_1.1.4_linux_arm64.zip
+RUN mv terraform /usr/local/bin/
+RUN terraform --version
+
+#
 COPY *.sh .
 RUN chmod +x *.sh
-
-# jupyter
 COPY requirements.txt .
 RUN pip install -r requirements.txt
 
+WORKDIR /home/ubuntu/tf
+COPY tf-spark-cluster /home/tf
+COPY test.py /home/tf
+RUN ls -altR  /home/tf
 
-USER ubuntu
+
 CMD ["/bin/bash", "/home/ubuntu/job_statup.sh"]
-
-# docker build -t spark32 .
-# docker run -itd -p8888:8888 -p8080:8080 -p7077:7077 -p6066:6066 spark32
