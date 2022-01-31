@@ -1,8 +1,8 @@
 FROM centos:centos7
 
+#spark
 #ENV  SPARK_VERSION=3.1.1 #3.2.0
 #ENV  HADOOP_VERSION=2.7 #3.2
-#spark
 ENV  SPARK_VERSION=3.2.0
 ENV  HADOOP_VERSION=2.7
 # for s3
@@ -54,17 +54,18 @@ RUN chown -R centos /work \
 RUN mkdir -p /code
 RUN mkdir -p /work
 
-# /dev/urandom is used as random source, which is prefectly safe
-# according to http://www.2uo.de/myths-about-urandom/
-RUN yum install -y  java-11-openjdk-devel  \
-    && echo "securerandom.source=file:/dev/urandom" >> /usr/lib/jvm/jre/lib/security/java.security \
-    && yum clean all
-
 #python
 RUN yum clean all
 RUN yum update -y
 
-# PySpark
+# java
+RUN yum install -y  java-11-openjdk-devel  \
+    && echo "securerandom.source=file:/dev/urandom" >> /usr/lib/jvm/jre/lib/security/java.security \
+    && yum clean all
+
+# scala
+
+# Python
 RUN yum install -y curl vim wget software-properties-common ssh net-tools ca-certificates python3 python3-pip python3-numpy python3-matplotlib python3-scipy python3-pandas python3-simpy
 RUN update-alternatives --install "/usr/bin/python" "python" "$(which python3)" 1
 RUN python -m pip install pip --upgrade
@@ -75,8 +76,7 @@ RUN wget --no-verbose -O apache-spark.tgz "https://archive.apache.org/dist/spark
 && tar -xf apache-spark.tgz -C /opt/spark --strip-components=1 \
 && rm apache-spark.tgz
 
-#aws hadoop
-#s3
+#aws hadoop/s3
 RUN wget https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/${HADOOP_VERSION_FULL}/hadoop-aws-${HADOOP_VERSION_FULL}.jar -P /opt/spark/jars/ && \
     wget https://repo1.maven.org/maven2/com/amazonaws/aws-java-sdk-bundle/${AWS_SDK_VERSION}/aws-java-sdk-bundle-${AWS_SDK_VERSION}.jar -P /opt/spark/jars/
 
@@ -84,14 +84,7 @@ RUN wget https://repo1.maven.org/maven2/org/apache/hadoop/hadoop-aws/${HADOOP_VE
 COPY ./elasticsearch-hadoop-7.16.2/dist/elasticsearch-spark-20_2.11-7.16.2.jar ${SPARK_HOME}/jars/
 
 #  docker logs
-RUN mkdir -p $SPARK_LOG_DIR && \
-touch $SPARK_MASTER_LOG && \
-touch $SPARK_WORKER_LOG && \
-ln -sf /dev/stdout $SPARK_MASTER_LOG && \
-ln -sf /dev/stdout $SPARK_WORKER_LOG
-
-
-
+RUN mkdir -p $SPARK_LOG_DIR && touch $SPARK_MASTER_LOG && touch $SPARK_WORKER_LOG && ln -sf /dev/stdout $SPARK_MASTER_LOG && ln -sf /dev/stdout $SPARK_WORKER_LOG
 
 # home centos
 WORKDIR /home/centos
@@ -99,7 +92,6 @@ WORKDIR /home/centos
 COPY *.sh .
 RUN chmod +x *.sh
 
-RUN mkdir -p work
 RUN mkdir -p /opt/spark/work
 RUN chown -R centos:centos  /opt/spark
 RUN chown -R centos:centos  /home/centos
@@ -112,10 +104,8 @@ COPY spark-defaults.conf /opt/spark/conf/spark-defaults.conf
 RUN python3 -V
 RUN python -V
 COPY requirements.txt .
-#RUN pip3 install --upgrade cython
 RUN python -m pip install -r requirements.txt
 RUN mkdir /home/centos/.jupyter
 COPY jupyter_notebook_config.py /home/centos/.jupyter/.
 
-
-CMD ["/bin/bash", "/home/centos/statup.sh"]
+CMD ["/bin/bash", "/home/centos/statup_base.sh"]
