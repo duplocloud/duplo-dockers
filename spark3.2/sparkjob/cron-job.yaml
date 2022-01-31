@@ -1,0 +1,29 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: job1-sparkjob
+  annotations:
+    duplocloud.net/managed-annotations: ""
+    duplocloud.net/managed-labels: ""
+    kubernetes.io/psp: eks.privileged
+  labels:
+    app: job1-sparkjob
+    owner: duploservices
+    tenantid: 8d526d80-2a53-49ab-93c4-6ed53c4f6696
+    tenantname: duploservices-sparkdemo
+  namespace: duploservices-sparkdemo
+spec:
+  schedule: "0 1 * * *"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: sparkjob
+            image: duplocloud/anyservice:spark_3_2_job_v6
+            imagePullPolicy: IfNotPresent
+            command:
+            - /bin/sh
+            - -c
+            - date; echo sparkjob from the Kubernetes cluster; /home/ubuntu/job_statup.sh
+          restartPolicy: OnFailure

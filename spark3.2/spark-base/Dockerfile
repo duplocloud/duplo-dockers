@@ -63,13 +63,11 @@ RUN yum install -y  java-11-openjdk-devel  \
 #python
 RUN yum clean all
 RUN yum update -y
-RUN yum install -y python3
-RUN python3 -V
-RUN python -V
 
 # PySpark
 RUN yum install -y curl vim wget software-properties-common ssh net-tools ca-certificates python3 python3-pip python3-numpy python3-matplotlib python3-scipy python3-pandas python3-simpy
 RUN update-alternatives --install "/usr/bin/python" "python" "$(which python3)" 1
+RUN python -m pip install pip --upgrade
 
 # spark
 RUN wget --no-verbose -O apache-spark.tgz "https://archive.apache.org/dist/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz" \
@@ -92,39 +90,32 @@ touch $SPARK_WORKER_LOG && \
 ln -sf /dev/stdout $SPARK_MASTER_LOG && \
 ln -sf /dev/stdout $SPARK_WORKER_LOG
 
-# jupyter
-RUN python3 -V
-RUN python -V
-COPY requirements.txt .
-RUN pip3 install -r requirements.txt
-
-EXPOSE 8080 7077 6066 8888
 
 
-RUN mkdir -p /opt/spark/work
 
 # home centos
 WORKDIR /home/centos
-
 # code
 COPY *.sh .
 RUN chmod +x *.sh
-COPY spark-defaults.conf /opt/spark/conf/spark-defaults.conf
-RUN mkdir -p work
 
-#???
+RUN mkdir -p work
+RUN mkdir -p /opt/spark/work
 RUN chown -R centos:centos  /opt/spark
-#
 RUN chown -R centos:centos  /home/centos
 
-## centos user ? do we need sudo?
-#RUN groupadd --gid 1000 centos \
-#    && useradd --uid 1000 --gid centos --shell /bin/bash --create-home centos
-#RUN yum update && yum install -y sudo
-
-
+# non root user
 USER centos
+COPY spark-defaults.conf /opt/spark/conf/spark-defaults.conf
+
+# python
+RUN python3 -V
+RUN python -V
+COPY requirements.txt .
+#RUN pip3 install --upgrade cython
+RUN python -m pip install -r requirements.txt
 RUN mkdir /home/centos/.jupyter
 COPY jupyter_notebook_config.py /home/centos/.jupyter/.
+
 
 CMD ["/bin/bash", "/home/centos/statup.sh"]
