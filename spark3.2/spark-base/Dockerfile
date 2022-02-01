@@ -66,7 +66,8 @@ RUN yum install -y  java-11-openjdk-devel  \
 # scala
 
 # Python
-RUN yum install -y curl vim wget software-properties-common ssh net-tools ca-certificates python3 python3-pip python3-numpy python3-matplotlib python3-scipy python3-pandas python3-simpy
+RUN yum install -y  unzip
+RUN yum install -y curl  vim wget software-properties-common ssh net-tools ca-certificates python3 python3-pip python3-numpy python3-matplotlib python3-scipy python3-pandas python3-simpy
 RUN update-alternatives --install "/usr/bin/python" "python" "$(which python3)" 1
 RUN python -m pip install pip --upgrade
 

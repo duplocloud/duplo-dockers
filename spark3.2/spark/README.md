@@ -1,17 +1,20 @@
-### build  spark
+### build spark (is centos)
 * cd spark3.2/spark
 * docker build -t duplocloud/anyservice:spark_3_2_v4 .
-* docker build -f Dockerfile.centos -t duplocloud/anyservice:spark_3_2_centos_v4 .
-### push
 * docker login
 * docker push duplocloud/anyservice:spark_3_2_v4
-
-### build  spark notebook
-* cd spark3.2/notebook
-* docker build -t duplocloud/anyservice:spark_3_2_notebook_v4 .
-### push
+### build spark centos
+* cd spark3.2/spark
+* docker build -f Dockerfile.centos -t duplocloud/anyservice:spark_3_2_centos_v4 .
 * docker login
-* docker push duplocloud/anyservice:spark_3_2_notebook_v4
+* docker push duplocloud/anyservice:spark_3_2_centos_v4
+### build spark ubuntu
+* cd spark3.2/spark-base
+* docker build -f Dockerfile.centos -t duplocloud/anyservice:spark_3_2_ubuntu_v4 .
+* docker login
+* docker push duplocloud/anyservice:spark_3_2_ubuntu_v4
+  
+
 ```shell
 
 ./spark-submit --deploy-mode cluster --master spark://10.202.1.65:7077 --class org.apache.spark.examples.JavaWordCount /opt/spark/examples/jars/spark-examples_2.12-3.2.0.jar 
