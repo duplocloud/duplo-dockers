@@ -6,3 +6,4 @@ user-agents
 IP2Location
 pyarrow
 jupyter
+pyspark

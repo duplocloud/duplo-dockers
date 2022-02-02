@@ -1,6 +1,6 @@
 from pyspark.sql import SparkSession
 import os
-
+os.environ.set('SPARK_MASTER_IP')
 envmasterip=os.environ.get('SPARK_MASTER_IP')
 sprk_url="spark://{}/:7077".format(envmasterip)
 print(sprk_url)
