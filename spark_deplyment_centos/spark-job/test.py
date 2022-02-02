@@ -1,8 +1,8 @@
 from pyspark.sql import SparkSession
 import os
 
-envmasterip= os.environ.get('SPARK_MASTER_IP')
-sprk_url= "spark:/{0}/:7077".format(envmasterip)
+envmasterip=os.environ.get('SPARK_MASTER_IP')
+sprk_url="spark://{}/:7077".format(envmasterip)
 print(sprk_url)
 
 logFile = "test.py"  # Should be some file on your system

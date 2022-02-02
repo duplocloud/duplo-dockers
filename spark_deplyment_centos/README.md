@@ -68,7 +68,9 @@ docker push duplocloud/anyservice:spark_3_2_centos_job_v1
 
 ```json
 {
-  "DUPLO_SPARK_MASTER_IP": "copy_master_ip_here" 
+  "DUPLO_SPARK_MASTER_IP": "copy_master_ip_here",
+ 
+
 }
 
 ```

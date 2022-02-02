@@ -1,7 +1,2 @@
-boto3
-requests
-ua-parser
-user-agents
-IP2Location
-pyarrow
-jupyter
+ 
+requests 

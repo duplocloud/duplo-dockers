@@ -103,9 +103,9 @@ WORKDIR /home/centos
 COPY *.sh .
 RUN chmod +x *.sh
 
-#RUN mkdir -p /opt/spark/work
-#RUN chown -R centos:centos  /opt/spark
-#RUN chown -R centos:centos  /home/centos
+RUN mkdir -p /opt/spark/work
+RUN chown -R centos:centos  /opt/spark
+RUN chown -R centos:centos  /home/centos
 
 # non root user
 USER centos
