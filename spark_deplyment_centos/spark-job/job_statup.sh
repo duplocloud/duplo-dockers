@@ -8,7 +8,7 @@ export SPARK_MASTER_IP=`cat ./terraform/spark/eks-sparkmaster-ip`
 echo "SPARK_MASTER_IP=$SPARK_MASTER_IP SPARK_HOME=$SPARK_HOME"
 
 echo "sleep 120"
-sleep 120
+sleep 180
 
 echo "============ running job START===================="
 #python test.py
