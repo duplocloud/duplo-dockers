@@ -2,7 +2,9 @@ version: "3.7"
 
 services:
   spark-master:
-    image: duplocloud/anyservice:spark_3_2_v1
+    build: ./spark
+    docker
+    image: spark_3_2_centos_master_v1
     hostname: spark-master
     restart: always
     ports:
@@ -11,7 +13,6 @@ services:
       - "4040:4040"
     volumes:
       - "./code:/home/ubuntu/work"
-      - "./logs/master:/home/ubuntu/logs"
     environment:
       - DUPLO_SPARK_MASTER_IP=0.0.0.0
       - DUPLO_SPARK_NODE_TYPE=master
@@ -21,7 +22,8 @@ services:
 
 
   spark-worker1:
-    image: duplocloud/anyservice:spark_3_2_v1
+    build: ./spark
+    image: spark_3_2_centos_worker_v1
     hostname: spark-worker1
     restart: always
     depends_on:
@@ -31,7 +33,6 @@ services:
       - "8085:8080"
     volumes:
       - "./code:/home/ubuntu/work"
-      - "./logs/worker1:/home/ubuntu/logs"
     environment:
       - DUPLO_SPARK_MASTER_IP=spark-master
       - DUPLO_SPARK_NODE_TYPE=worker
@@ -40,7 +41,8 @@ services:
       - spark-master:spark-master
 
   spark-notebook1:
-    image: duplocloud/anyservice:spark_3_2_notebook_v1
+    build: ./spark-notebook
+    image: spark_3_2_centos_notebook_v1
     hostname: spark-notebook1
     restart: always
     depends_on:
@@ -50,7 +52,24 @@ services:
       - "8888:8888"
     volumes:
       - "./code:/home/ubuntu/work"
-      - "./logs/notebook:/home/ubuntu/logs"
+    environment:
+      - DUPLO_SPARK_MASTER_IP=spark-master
+      - LOCAL_DOCKER_HOST=true
+    links:
+      - spark-master:spark-master
+
+  spark-livy1:
+    build: ./spark-livy1
+    image: spark_3_2_centos_livy1_v1
+    hostname: spark-livy1
+    restart: always
+    depends_on:
+      - spark-master
+      - spark-worker1
+    ports:
+      - "8888:8888"
+    volumes:
+      - "./code:/home/ubuntu/work"
     environment:
       - DUPLO_SPARK_MASTER_IP=spark-master
       - LOCAL_DOCKER_HOST=true
