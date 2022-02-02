@@ -1,14 +1,17 @@
 from pyspark.sql import SparkSession
 import os
-os.environ.set('SPARK_MASTER_IP')
+# os.environ.set('SPARK_MASTER_IP')
 envmasterip=os.environ.get('SPARK_MASTER_IP')
 sprk_url="spark://{}/:7077".format(envmasterip)
 print(sprk_url)
 
 logFile = "test.py"  # Should be some file on your system
+# spark = SparkSession.builder\
+#     .appName("SimpleApp")\
+#     .master(sprk_url)\
+#     .getOrCreate()
 spark = SparkSession.builder\
     .appName("SimpleApp")\
-    .master(sprk_url)\
     .getOrCreate()
 
 logData = spark.read.text(logFile).cache()

@@ -13,12 +13,13 @@ variable "eks_spark_cluster_slave_count" {
 
 variable "eks_spark_cluster_prefix" {
   type  = string
-  default = "job6"
+  default = "jobe3"
 }
 
 variable "eks_node_image_name" {
   type  = string
-  default = "ami-0cdd9b2ea797fd5db"
+  default = "ami-076cfc980e4382759"
+  // 0cdd9b2ea797fd5db
 }
 
 variable "spark_master_docker_image" {

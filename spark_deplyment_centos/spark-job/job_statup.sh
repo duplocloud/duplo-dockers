@@ -11,7 +11,9 @@ echo "sleep 120"
 sleep 120
 
 echo "============ running job START===================="
-python test.py
+#python test.py
+/opt/spark/bin/spark-submit --master "spark://${SPARK_MASTER_IP}:7077" /opt/spark/examples/src/main/python/pi.py
+/opt/spark/bin/spark-submit --master "spark://${SPARK_MASTER_IP}:7077" test.py
 echo "============ running job END===================="
 
 echo "sleep 120"

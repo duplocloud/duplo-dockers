@@ -34,6 +34,12 @@ docker push duplocloud/anyservice:spark_3_2_centos_notebook_v1
 docker push duplocloud/anyservice:spark_3_2_centos_livy_v1   
 docker push duplocloud/anyservice:spark_3_2_centos_job_v1  
 
+
+docker build -t duplocloud/anyservice:spark_3_2_centos_e_job_v1 . 
+docker push duplocloud/anyservice:spark_3_2_centos_e_job_v1  
+
+
+
 ```
  
 ```
