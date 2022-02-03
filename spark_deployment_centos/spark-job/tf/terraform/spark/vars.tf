@@ -13,7 +13,7 @@ variable "eks_spark_cluster_slave_count" {
 
 variable "eks_spark_cluster_prefix" {
   type  = string
-  default = "jobe3"
+  default = "jobe4"
 }
 
 variable "eks_node_image_name" {
