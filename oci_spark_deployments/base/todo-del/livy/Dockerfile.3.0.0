@@ -1,0 +1,98 @@
+ARG BASE_CONTAINER=duplocloud/anyservice:spark_3_2_ia_v1
+FROM $BASE_CONTAINER
+
+
+WORKDIR /home/centos
+USER root
+
+HEALTHCHECK CMD curl -f http://localhost:8998/ || exit 1
+
+#ENV LIVY_VERSION=0.8.1-incubating
+#ENV LIVY_CONF_DIR=/etc/livy
+ENV LIVY_CONF_DIR=/opt/livy/conf
+ENV LIVY_LOG_DIR=/var/log/livy
+ENV LIVY_LOG_FILE=/var/log/livy/livy--server.out
+ENV LIVY_HOME /opt/livy
+ENV PATH $LIVY_HOME/bin:$PATH
+
+ENV HADOOP_VERSION_=2.7.3
+ENV HADOOP_HOME /opt/hadoop
+
+WORKDIR /opt
+
+##### is livy requires haddop lib?
+#http://apache.mirrors.tds.net/hadoop/common/hadoop-${HADOOP_VERSION_}/hadoop-${HADOOP_VERSION_}.tar.gz
+#https://archive.apache.org/dist/hadoop/common/hadoop-${HADOOP_VERSION_}/hadoop-${HADOOP_VERSION_}.tar.gz
+#https://archive.apache.org/dist/hadoop/common/hadoop-2.7.3/hadoop-2.7.3.tar.gz
+RUN wget https://archive.apache.org/dist/hadoop/common/hadoop-${HADOOP_VERSION_}/hadoop-${HADOOP_VERSION_}.tar.gz &&  \
+    tar -xzf hadoop-${HADOOP_VERSION_}.tar.gz && \
+    mv hadoop-${HADOOP_VERSION_} $HADOOP_HOME
+#RUN wget http://apache.mirrors.tds.net/hadoop/common/hadoop-${HADOOP_VERSION_}/hadoop-${HADOOP_VERSION_}.tar.gz && \
+#    tar -xzf hadoop-${HADOOP_VERSION_}.tar.gz && \
+#    mv hadoop-${HADOOP_VERSION_} $HADOOP_HOME
+
+#####  build livy : todo move to anothe docker
+# maven
+RUN yum install -y git curl
+ARG MAVEN_VERSION=3.6.3
+ARG USER_HOME_DIR="/root"
+ARG BASE_URL=https://apache.osuosl.org/maven/maven-3/${MAVEN_VERSION}/binaries
+RUN mkdir -p /opt/maven /opt/maven/ref
+RUN echo ${BASE_URL}/apache-maven-${MAVEN_VERSION}-bin.tar.gz
+RUN curl -fsSL -o /tmp/apache-maven.tar.gz ${BASE_URL}/apache-maven-${MAVEN_VERSION}-bin.tar.gz
+RUN tar -xzf /tmp/apache-maven.tar.gz -C /opt/maven --strip-components=1
+RUN rm -f /tmp/apache-maven.tar.gz
+RUN ln -s /opt/maven/bin/mvn /usr/bin/mvn
+ENV MAVEN_HOME /opt/maven
+ENV MAVEN_CONFIG "$USER_HOME_DIR/.m2"
+ENV PATH $PATH:$LIVY_HOME/bin:~/.local/bin:$PATH:/root/.local/bin:$LIVY_HOME/jars
+
+# build livy
+WORKDIR /build
+RUN git clone https://github.com/apache/incubator-livy.git
+WORKDIR   /build/incubator-livy
+RUN cp /build/incubator-livy/pom.xml  /build/incubator-livy/_pom.xml.origin
+RUN cp /build/incubator-livy/python-api/pom.xml  /build/incubator-livy/python-api/_pom.xml.origin
+RUN cp /build/incubator-livy/assembly/pom.xml  /build/incubator-livy/assembly/_pom.xml.origin
+RUN cp /build/incubator-livy/coverage/pom.xml  /build/incubator-livy/coverage/_pom.xml.origin
+COPY ./0.8/pom.xml /build/incubator-livy/pom.xml
+COPY ./0.8/python-api/pom.xml /build/incubator-livy/python-api/pom.xml
+#COPY ./0.8/assembly/pom.xml /build/incubator-livy/assembly/pom.xml
+#COPY ./0.8/coverage/pom.xml /build/incubator-livy/coverage/pom.xml
+
+RUN mvn clean package -B -V -e \
+        -Pspark-3.0 \
+        -Pthriftserver \
+        -DskipTests \
+        -DskipITs \
+        -Dmaven.javadoc.skip=true
+
+RUN unzip /build/incubator-livy/assembly/target/apache-livy-0.8.0-incubating-SNAPSHOT-bin.zip
+RUN mv apache-livy-0.8.0-incubating-SNAPSHOT-bin /opt/livy
+RUN chmod +x   /opt/livy/bin/livy-server
+
+#RUN rm -rf /build/incubator-livy/
+
+RUN ls -alt /opt/
+RUN ls -alt /opt/livy
+#####  build livy : todo move to anothe docker : DONE
+
+RUN mkdir -p $LIVY_LOG_DIR && touch $LIVY_LOG_FILE   && ln -sf /dev/stdout $LIVY_LOG_FILE
+
+
+COPY requirements.txt .
+RUN pip install -r requirements.txt
+
+WORKDIR /home/centos
+RUN cp  -r $LIVY_HOME/conf $LIVY_HOME/conf-origin
+COPY conf/ $LIVY_CONF_DIR/
+
+
+COPY *.sh  /home/centos/
+COPY *.py  /home/centos/
+RUN chmod +x *.sh
+
+#USER centos
+
+
+CMD ["/bin/bash", "/home/centos/statup-livy.sh"]

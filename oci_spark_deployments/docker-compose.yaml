@@ -1,0 +1,75 @@
+version: "3.7"
+
+services:
+  spark-master:
+    build: ./spark
+    image: spark_3_2_1_ia_v2
+    hostname: spark-master
+    restart: always
+    ports:
+      - "8080:8080"
+      - "7077:7077"
+      - "4040:4040"
+#    volumes:
+#      - "./code:/home/centos/work"
+    environment:
+      - DUPLO_SPARK_MASTER_IP=0.0.0.0
+      - DUPLO_SPARK_NODE_TYPE=master
+      - LOCAL_DOCKER_HOST=true
+    #    command:
+#      - /home/ubuntu/statup_centos.sh
+
+
+  spark-worker1:
+    build: ./spark
+    image: spark_3_2_1_ia_v2
+    hostname: spark-worker1
+    restart: always
+    depends_on:
+      - spark-master
+    ports:
+      - "7005:7000"
+      - "8085:8080"
+#    volumes:
+#      - "./code:/home/centos/work"
+    environment:
+      - DUPLO_SPARK_MASTER_IP=spark-master
+      - DUPLO_SPARK_NODE_TYPE=worker
+      - LOCAL_DOCKER_HOST=true
+    links:
+      - spark-master:spark-master
+
+  spark-notebook1:
+    build: ./spark-notebook
+    image: spark_3_2_1_ia_notebook_v2
+    hostname: spark-notebook1
+    restart: always
+    depends_on:
+      - spark-master
+      - spark-worker1
+    ports:
+      - "8888:8888"
+#    volumes:
+#      - "./code:/home/centos/work"
+    environment:
+      - DUPLO_SPARK_MASTER_IP=spark-master
+      - LOCAL_DOCKER_HOST=true
+    links:
+      - spark-master:spark-master
+
+  spark-livy1:
+    image: spark_3_2_1_ia_livy_v2
+    hostname: spark-livy1
+    restart: always
+    depends_on:
+      - spark-master
+      - spark-worker1
+    ports:
+      - "8998:8998"
+#    volumes:
+#      - "./code:/home/centos/work"
+    environment:
+      - DUPLO_SPARK_MASTER_IP=spark-master
+      - LOCAL_DOCKER_HOST=true
+    links:
+      - spark-master:spark-master
