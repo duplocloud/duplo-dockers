@@ -1,4 +1,7 @@
+
 #!/bin/bash -ex
+
+bash /create_oci_profile.sh
 
 # 1 for slave : set { "DUPLO_SPARK_NODE_TYPE"="worker", "DUPLO_PARK_MASTER_IP"="x.x.x.x"}
 # 2- for master :  not required
@@ -19,8 +22,11 @@ else
     ############################## enable max memory option : default : Xms1024M Xmx4096M ########################
     #todo: may be not needed
     NUMBER_OF_CORES=$( cat /proc/cpuinfo | awk '/^processor/{print $3}' | wc -l)
+    #its in KB
     RAM_SIZE_TOTAL=$(awk '/^MemTotal:/{print $2}' /proc/meminfo)
-    RAM_SIZE=$(( ${totalk}*90/100 ))
+    RAM_SIZE=$(( ${RAM_SIZE_TOTAL}*1/1000000 - 1))
+
+    echo "NUMBER_OF_CORES ${NUMBER_OF_CORES}  RAM_SIZE_TOTAL ${RAM_SIZE_TOTAL}  RAM_SIZE ${RAM_SIZE}   "
 
     totalk=$(awk '/^MemTotal:/{print $2}' /proc/meminfo)
     max_mem=$(( ${totalk}*80/100 ))
@@ -53,7 +59,7 @@ then
     echo " cd /opt/spark/bin && ./spark-class org.apache.spark.deploy.worker.Worker  spark://$master:7077 -c $NUMBER_OF_CORES -m $RAM_SIZE >> $SPARK_WORKER_LOG "
     cd /opt/spark/bin && \
      ./spark-class org.apache.spark.deploy.worker.Worker \
-      spark://$master:7077 -c $NUMBER_OF_CORES -m $RAM_SIZE >> $SPARK_WORKER_LOG
+      spark://$master:7077 -c $NUMBER_OF_CORES -m ${RAM_SIZE}G >> $SPARK_WORKER_LOG
 else
     $LIVY_HOME/bin/livy-server >> /hoke/centos/livy.log &
     echo " cd /opt/spark/bin && ./spark-class org.apache.spark.deploy.master.Master   -h $master --port $SPARK_MASTER_PORT --webui-port $SPARK_MASTER_WEBUI_PORT >> $SPARK_MASTER_LOG"
@@ -61,10 +67,3 @@ else
           -h $master --port $SPARK_MASTER_PORT --webui-port $SPARK_MASTER_WEBUI_PORT >> $SPARK_MASTER_LOG
 fi
 echo "========DUPLO_SPARK_NODE_TYPE ================= DONE  $DUPLO_SPARK_NODE_TYPE $master   ==============================="
-
-
-#while :
-#do
-#	echo "Press [CTRL+C] to stop.."
-#	sleep 5
-#done

@@ -6,7 +6,7 @@
     },
     "oci_spark_cluster_prefix": {
       "type": "string",
-      "default": "ocij14"
+      "default": "job15"
     },
     "availability_domain": {
       "type": "string",
@@ -22,19 +22,19 @@
     },
     "spark_master_docker_image": {
       "type": "string",
-      "default": "duplocloud/anyservice:spark_3_2_1_ia_v14"
+      "default": "duplocloud/anyservice:spark_3_2_1_ia_v999"
     },
     "spark_slave_docker_image": {
       "type": "string",
-      "default": "duplocloud/anyservice:spark_3_2_1_ia_v14"
+      "default": "duplocloud/anyservice:spark_3_2_1_ia_v999"
     },
     "spark_livy_docker_image": {
       "type": "string",
-      "default": "duplocloud/anyservice:spark_3_2_1_ia_livy_v14"
+      "default": "duplocloud/anyservice:spark_3_2_1_ia_livy_v999"
     },
     "spark_notebook_docker_image": {
       "type": "string",
-      "default": "duplocloud/anyservice:spark_3_2_1_ia_notebook_v14"
+      "default": "duplocloud/anyservice:spark_3_2_1_ia_notebook_v999"
     },
     "master_node_instance_type": {
       "type": "string",
@@ -50,11 +50,64 @@
     },
      "notebook_node_instance_type": {
       "type": "string",
-      "default": "VM.Standard2.1"
+      "default": "VM.Standard2.2"
     },
     "oci_spark_cluster_slave_count": {
       "type": "number",
-      "default": 3
+      "default": 1
+    },
+    "oci_spark_notebook_count": {
+      "type": "number",
+      "default": 1
+    },
+     "oci_profile_user": {
+      "type": "string",
+      "default": ""
+    },
+     "oci_profile_fingerprint": {
+      "type": "string",
+      "default": "us-ashburn-1"
+    },
+     "oci_profile_tenancy": {
+      "type": "string",
+      "default": ""
+    },
+     "oci_profile_region": {
+      "type": "string",
+      "default": ""
+    },
+     "oci_profile_key_file": {
+      "type": "string",
+      "default": "~/.oci/oci_api_key"
+    },
+    "oci_profile_key_local_path": {
+      "type": "string",
+      "default": "/home/pravin/oci_api_key"
+    },
+    "master_node_memory_in_gbs": {
+      "type": "number",
+      "default": 10
+    },
+    "master_node_ocpus": {
+      "type": "number",
+      "default": 1
+    },
+    "slave_node_memory_in_gbs": {
+      "type": "number",
+      "default": 10                        
+    },
+    "slave_node_ocpus": {
+      "type": "number",
+      "default": 1                         
+    },
+    "notebook_node_memory_in_gbs": {
+      "type": "number",
+      "default": 10                        
+    },
+    "notebook_node_ocpus": {
+      "type": "number",
+      "default": 1                         
     }
   }
 }
+

@@ -1,5 +1,7 @@
 #!/bin/bash -ex
 
+bash /create_oci_profile.sh
+
 # 1 for node : set { "DUPLO_SPARK_NODE_TYPE":"worker", "DUPLO_PARK_MASTER_IP":"x.x.x.x"}
 # 2- for master : -
 
@@ -34,6 +36,8 @@ echo "spark.master spark://${master}:7077" | sudo tee -a /opt/spark/conf/spark-d
 mkdir -p /home/centos/work
 cd /home/centos/work
 cp /home/centos/*.ipynb /home/centos/work/
+#cp -r /home/centos/mobility_eval /home/centos/work/mobility_eval
+cp -r /home/centos/notebooks/* /home/centos/work/
 
 export PATH=$PATH:~/.local/bin
 jupyter notebook

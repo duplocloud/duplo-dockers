@@ -1,5 +1,6 @@
 #!/bin/bash -ex
 
+bash /create_oci_profile.sh
 
 ./scripts/apply.sh sparkdemo spark
 

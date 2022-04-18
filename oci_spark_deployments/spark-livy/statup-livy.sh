@@ -1,5 +1,7 @@
 #!/bin/bash -ex
 
+bash /create_oci_profile.sh
+
 # 1 for node : set { "DUPLO_SPARK_NODE_TYPE"="worker", "DUPLO_PARK_MASTER_IP"="x.x.x.x"}
 # 2- for master : -
 

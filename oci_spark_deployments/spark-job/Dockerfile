@@ -4,13 +4,11 @@ FROM $BASE_CONTAINER
 
 
 USER root
-RUN python -V
-RUN python3 -V
 
-#RUN yum install -y yum-utils
-#RUN yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
-#RUN yum -y install terraform
-#RUN terraform --version
+RUN yum install -y yum-utils
+RUN yum-config-manager --add-repo https://rpm.releases.hashicorp.com/RHEL/hashicorp.repo
+RUN yum -y install terraform
+RUN terraform --version
 
 COPY requirements.txt ./
 RUN pip install -r requirements.txt

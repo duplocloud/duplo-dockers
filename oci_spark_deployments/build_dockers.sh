@@ -2,10 +2,12 @@
 export BUILDKIT_PROGRESS=plain
 
 source ../env.sh
+source ./image_config.sh
+echo "IMAGE_PREFIX=$IMAGE_PREFIX"
+echo "IMAGE_VERSION=$IMAGE_VERSION"
+#IMAGE_PREFIX=duplocloud/anyservice:spark_3_2_1_ia
+#IMAGE_VERSION=v999
 
-
-IMAGE_PREFIX=duplocloud/anyservice:spark_3_2_1_ia
-IMAGE_VERSION=v14
 IMAGE_OS=centos:centos7
 IMAGE_BASE=${IMAGE_PREFIX}_base_${IMAGE_VERSION}
 IMAGE_SPARK=${IMAGE_PREFIX}_${IMAGE_VERSION}
@@ -64,20 +66,20 @@ echo "======  $str_build . END======\n\n\n"
 sleep 5
 
 
-#4
-cd ../spark-livy
-parent_image=$IMAGE_SPARK
-build_image=$IMAGE_LIVY
-str_build="docker build  --build-arg BASE_CONTAINER=$parent_image  -f Dockerfile -t $build_image ."
-echo "======  $str_build START======"
-$str_build
-retVal=$?
-if [ $retVal -ne 0 ]; then
-    echo "======  $str_build . ERROR======"
-    exit $retVal
-fi
-echo "======  $str_build . END======\n\n\n"
-sleep 5
+##4
+#cd ../spark-livy
+#parent_image=$IMAGE_SPARK
+#build_image=$IMAGE_LIVY
+#str_build="docker build  --build-arg BASE_CONTAINER=$parent_image  -f Dockerfile -t $build_image ."
+#echo "======  $str_build START======"
+#$str_build
+#retVal=$?
+#if [ $retVal -ne 0 ]; then
+#    echo "======  $str_build . ERROR======"
+#    exit $retVal
+#fi
+#echo "======  $str_build . END======\n\n\n"
+#sleep 5
 
 
 #5
@@ -133,14 +135,14 @@ if [ $retVal -ne 0 ]; then
 fi
 echo "======  docker push $IMAGE_SPARK_NOTEBOOK DONE======"
 
-echo "======  docker push $IMAGE_LIVY START======"
-docker push $IMAGE_LIVY
-retVal=$?
-if [ $retVal -ne 0 ]; then
-    echo "======  docker push $IMAGE_LIVY ERROR======"
-    exit $retVal
-fi
-echo "======  docker push $IMAGE_LIVY DONE======"
+#echo "======  docker push $IMAGE_LIVY START======"
+#docker push $IMAGE_LIVY
+#retVal=$?
+#if [ $retVal -ne 0 ]; then
+#    echo "======  docker push $IMAGE_LIVY ERROR======"
+#    exit $retVal
+#fi
+#echo "======  docker push $IMAGE_LIVY DONE======"
 
 echo "======  docker push $IMAGE_JOB START======"
 docker push $IMAGE_JOB
@@ -172,7 +174,7 @@ echo "====== SPARK_MASTER_IP=$SPARK_MASTER_IP SPARK_LIVY_IP=$SPARK_LIVY_IP =====
 
 
 sleep 360
-python livy_test.py
+#python livy_test.py
 
 #
 #export SPARK_MASTER_IP=`cat ./spark-job/build/oci-sparkmaster-ip`

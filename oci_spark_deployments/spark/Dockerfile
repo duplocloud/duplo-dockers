@@ -3,7 +3,7 @@ FROM $BASE_CONTAINER
 
 WORKDIR /home/centos
 USER root
-COPY *.sh ./
+COPY *.sh .
 RUN chmod +x *.sh
 USER centos
 COPY requirements.txt .

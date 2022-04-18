@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     duplocloud = {
-      version = "~> 0.7.5"
+      version = "~> 0.7.9"
       source = "duplocloud/duplocloud"
     }
   }
@@ -28,7 +28,6 @@ locals {
   sparkmaster_prefix = "${var.oci_spark_cluster_prefix}-sparkmaster"
 #  sparkmaster_full_name = "duploservices-${local.tenant_name}-${var.oci_spark_cluster_prefix}-sparkmaster"
   sparkslave_prefix = "${var.oci_spark_cluster_prefix}-sparkslave"
-  sparklivy_prefix = "${var.oci_spark_cluster_prefix}-sparklivy"
   sparknotebook_prefix = "${var.oci_spark_cluster_prefix}-sparknotebook"
 }
 
@@ -44,6 +43,22 @@ data "duplocloud_tenant_aws_region" "this" {
   tenant_id = local.tenant_id
 }
 
+
+
+resource "duplocloud_k8_secret" "oci" {
+  tenant_id = local.tenant_id
+  secret_type = "Opaque"
+  secret_name = "oci"
+  secret_data = jsonencode({
+    "oci_profile_user"                            = var.oci_profile_user,
+    "oci_profile_fingerprint"                     = var.oci_profile_fingerprint,
+    "oci_profile_tenancy"                         = var.oci_profile_tenancy,
+    "oci_profile_region"                          = var.oci_profile_region,
+    "oci_profile_key_file"                        = var.oci_profile_key_file,
+    "oci_profile_key"                             = filebase64("${var.oci_profile_key_local_path}"),
+  })
+}
+
 resource "duplocloud_oci_containerengine_node_pool" "oci-sparkmaster" {
 
 
@@ -52,8 +67,13 @@ resource "duplocloud_oci_containerengine_node_pool" "oci-sparkmaster" {
   node_image_id = var.node_image_id
   node_shape    = var.master_node_instance_type
 
-  node_config_details {
-    size = 1
+  node_shape_config {
+  memory_in_gbs=var.master_node_memory_in_gbs
+  ocpus=var.master_node_ocpus
+  }
+
+  node_config_details {   
+  size = 1
 
     placement_configs {
       availability_domain = local.availability_domain
@@ -93,9 +113,13 @@ resource "duplocloud_oci_containerengine_node_pool" "oci-sparkslave" {
   node_image_id = var.node_image_id
   node_shape    = var.slave_node_instance_type
 
+  node_shape_config {
+    memory_in_gbs=var.slave_node_memory_in_gbs
+    ocpus=var.slave_node_ocpus
+    }
+
   node_config_details {
     size = var.oci_spark_cluster_slave_count
-
     placement_configs {
       availability_domain = local.availability_domain
       subnet_id           = var.subnetid
@@ -126,46 +150,7 @@ resource "duplocloud_oci_containerengine_node_pool" "oci-sparkslave" {
 
 }
 
-resource "duplocloud_oci_containerengine_node_pool" "oci-sparklivy" {
-
-  name          = local.sparklivy_prefix
-  tenant_id     = local.tenant_id
-  node_image_id = var.node_image_id
-  node_shape    = var.livy_node_instance_type
-
-  node_config_details {
-    size = 1
-
-    placement_configs {
-      availability_domain = local.availability_domain
-      subnet_id           = var.subnetid
-    }
-
-    freeform_tags = {
-      CreatedBy = "duplo"
-      Spark = "livy"
-    }
-  }
-
-  initial_node_labels {
-    key   = "allocationtags"
-    value = local.sparklivy_prefix
-  }
-
-  lifecycle {
-     create_before_destroy = true
-     ignore_changes = [
-      node_config_details.0.freeform_tags,
-      defined_tags
-    ]
-  }
-
-   provisioner "local-exec" {
-    command = "sleep 120"
-  }
-
-}
-
+ 
 
 resource "duplocloud_oci_containerengine_node_pool" "oci-sparknotebook" {
 
@@ -174,8 +159,15 @@ resource "duplocloud_oci_containerengine_node_pool" "oci-sparknotebook" {
   node_image_id = var.node_image_id
   node_shape    = var.notebook_node_instance_type
 
+    node_shape_config {
+    memory_in_gbs=var.notebook_node_memory_in_gbs
+    ocpus=var.notebook_node_ocpus
+    }
+
   node_config_details {
-    size = 1
+    size = var.oci_spark_notebook_count
+  #memory_in_gbs (Number)
+  #ocpus (Number)
 
     placement_configs {
       availability_domain = local.availability_domain
@@ -210,7 +202,7 @@ resource "duplocloud_oci_containerengine_node_pool" "oci-sparknotebook" {
 
 resource "duplocloud_duplo_service" "oci-sparkmaster" {
   depends_on = [duplocloud_oci_containerengine_node_pool.oci-sparkmaster,
-       duplocloud_oci_containerengine_node_pool.oci-sparkslave, duplocloud_oci_containerengine_node_pool.oci-sparklivy]
+       duplocloud_oci_containerengine_node_pool.oci-sparkslave, duplocloud_k8_secret.oci]
 
 
   lifecycle {
@@ -232,13 +224,20 @@ resource "duplocloud_duplo_service" "oci-sparkmaster" {
     Env = [
       { Name = "DUPLO_SPARK_MASTER_IP", Value = "0.0.0.0" },
       { Name = "DUPLO_SPARK_NODE_TYPE", Value = "master" },
+      { Name = "oci_profile_user", ValueFrom = { SecretKeyRef = { Name = duplocloud_k8_secret.oci.secret_name, Key = "oci_profile_user" } } },
+      { Name = "oci_profile_fingerprint", ValueFrom = { SecretKeyRef = { Name = duplocloud_k8_secret.oci.secret_name, Key = "oci_profile_fingerprint" } } },
+      { Name = "oci_profile_tenancy", ValueFrom = { SecretKeyRef = { Name = duplocloud_k8_secret.oci.secret_name, Key = "oci_profile_tenancy" } } },
+      { Name = "oci_profile_region", ValueFrom = { SecretKeyRef = { Name = duplocloud_k8_secret.oci.secret_name, Key = "oci_profile_region" } } },
+      { Name = "oci_profile_key_file", ValueFrom = { SecretKeyRef = { Name = duplocloud_k8_secret.oci.secret_name, Key = "oci_profile_key_file" } } },
+      { Name = "oci_profile_key", ValueFrom = { SecretKeyRef = { Name = duplocloud_k8_secret.oci.secret_name, Key = "oci_profile_key" } } },
+
     ]
   })
 }
 
 resource "duplocloud_duplo_service" "oci-sparkslave" {
  depends_on = [duplocloud_oci_containerengine_node_pool.oci-sparkmaster,
-       duplocloud_oci_containerengine_node_pool.oci-sparkslave, duplocloud_oci_containerengine_node_pool.oci-sparklivy]
+       duplocloud_oci_containerengine_node_pool.oci-sparkslave, duplocloud_k8_secret.oci]
 
   lifecycle {
     ignore_changes = [ docker_image ]
@@ -258,45 +257,23 @@ resource "duplocloud_duplo_service" "oci-sparkslave" {
     HostNetwork = true,
     Env = [
       { Name = "DUPLO_SPARK_MASTER_IP", Value = duplocloud_oci_containerengine_node_pool.oci-sparkmaster.nodes[0].private_ip },
-      { Name = "DUPLO_SPARK_LIVY_IP", Value = duplocloud_oci_containerengine_node_pool.oci-sparklivy.nodes[0].private_ip },
       { Name = "DUPLO_SPARK_NODE_TYPE", Value = "worker" },
+      { Name = "oci_profile_user", ValueFrom = { SecretKeyRef = { Name = duplocloud_k8_secret.oci.secret_name, Key = "oci_profile_user" } } },
+      { Name = "oci_profile_fingerprint", ValueFrom = { SecretKeyRef = { Name = duplocloud_k8_secret.oci.secret_name, Key = "oci_profile_fingerprint" } } },
+      { Name = "oci_profile_tenancy", ValueFrom = { SecretKeyRef = { Name = duplocloud_k8_secret.oci.secret_name, Key = "oci_profile_tenancy" } } },
+      { Name = "oci_profile_region", ValueFrom = { SecretKeyRef = { Name = duplocloud_k8_secret.oci.secret_name, Key = "oci_profile_region" } } },
+      { Name = "oci_profile_key_file", ValueFrom = { SecretKeyRef = { Name = duplocloud_k8_secret.oci.secret_name, Key = "oci_profile_key_file" } } },
+      { Name = "oci_profile_key", ValueFrom = { SecretKeyRef = { Name = duplocloud_k8_secret.oci.secret_name, Key = "oci_profile_key" } } },
+
     ]
   })
 
 }
 
-resource "duplocloud_duplo_service" "oci-sparklivy" {
- depends_on = [duplocloud_oci_containerengine_node_pool.oci-sparkmaster,
-       duplocloud_oci_containerengine_node_pool.oci-sparkslave, duplocloud_oci_containerengine_node_pool.oci-sparklivy]
-
-  lifecycle {
-    ignore_changes = [ docker_image ]
-  }
-
-  tenant_id = local.tenant_id
-  name  = local.sparklivy_prefix
-
-  agent_platform = 7
-  cloud = 1
-
-  docker_image   = var.spark_livy_docker_image
-  replicas = 1
-  allocation_tags = local.sparklivy_prefix
-
-  other_docker_config = jsonencode({
-    HostNetwork = true,
-    Env = [
-      { Name = "DUPLO_SPARK_MASTER_IP", Value = duplocloud_oci_containerengine_node_pool.oci-sparkmaster.nodes[0].private_ip },
-      { Name = "DUPLO_SPARK_LIVY_IP", Value = duplocloud_oci_containerengine_node_pool.oci-sparklivy.nodes[0].private_ip },
-      { Name = "DUPLO_SPARK_NODE_TYPE", Value = "livy" },
-    ]
-  })
-
-}
 
 resource "duplocloud_duplo_service" "oci-sparknotebook" {
  depends_on = [duplocloud_oci_containerengine_node_pool.oci-sparkmaster,
-       duplocloud_oci_containerengine_node_pool.oci-sparkslave, duplocloud_oci_containerengine_node_pool.oci-sparklivy,
+       duplocloud_oci_containerengine_node_pool.oci-sparkslave, duplocloud_k8_secret.oci,
         duplocloud_oci_containerengine_node_pool.oci-sparknotebook]
 
   lifecycle {
@@ -310,15 +287,21 @@ resource "duplocloud_duplo_service" "oci-sparknotebook" {
   cloud = 1
 
   docker_image   = var.spark_notebook_docker_image
-  replicas = 1
+  replicas = var.oci_spark_notebook_count
   allocation_tags = local.sparknotebook_prefix
 
   other_docker_config = jsonencode({
     HostNetwork = true,
     Env = [
       { Name = "DUPLO_SPARK_MASTER_IP", Value = duplocloud_oci_containerengine_node_pool.oci-sparkmaster.nodes[0].private_ip },
-      { Name = "DUPLO_SPARK_LIVY_IP", Value = duplocloud_oci_containerengine_node_pool.oci-sparklivy.nodes[0].private_ip },
       { Name = "DUPLO_SPARK_NODE_TYPE", Value = "notebook" },
+      { Name = "oci_profile_user", ValueFrom = { SecretKeyRef = { Name = duplocloud_k8_secret.oci.secret_name, Key = "oci_profile_user" } } },
+      { Name = "oci_profile_fingerprint", ValueFrom = { SecretKeyRef = { Name = duplocloud_k8_secret.oci.secret_name, Key = "oci_profile_fingerprint" } } },
+      { Name = "oci_profile_tenancy", ValueFrom = { SecretKeyRef = { Name = duplocloud_k8_secret.oci.secret_name, Key = "oci_profile_tenancy" } } },
+      { Name = "oci_profile_region", ValueFrom = { SecretKeyRef = { Name = duplocloud_k8_secret.oci.secret_name, Key = "oci_profile_region" } } },
+      { Name = "oci_profile_key_file", ValueFrom = { SecretKeyRef = { Name = duplocloud_k8_secret.oci.secret_name, Key = "oci_profile_key_file" } } },
+      { Name = "oci_profile_key", ValueFrom = { SecretKeyRef = { Name = duplocloud_k8_secret.oci.secret_name, Key = "oci_profile_key" } } },
+
     ]
   })
 
@@ -337,14 +320,6 @@ resource "local_file" "oci-sparkmaster-ip" {
 
 
 
-resource "local_file" "oci-sparklivy-ip" {
-  depends_on = [duplocloud_oci_containerengine_node_pool.oci-sparklivy]
-
-  content  =   duplocloud_oci_containerengine_node_pool.oci-sparklivy.nodes[0].private_ip
-
-  filename = "${path.module}/../../../build/oci-sparklivy-ip"
-}
-
 
 resource "local_file" "oci-sparknotebook-ip" {
   depends_on = [duplocloud_oci_containerengine_node_pool.oci-sparknotebook]
@@ -353,5 +328,6 @@ resource "local_file" "oci-sparknotebook-ip" {
 
   filename = "${path.module}/../../../build/oci-sparknotebook-ip"
 }
+
 
 

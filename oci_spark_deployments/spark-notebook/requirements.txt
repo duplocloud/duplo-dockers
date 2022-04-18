@@ -1,3 +1,4 @@
+cython
 boto3
 requests
 ua-parser
@@ -6,3 +7,15 @@ IP2Location
 pyarrow
 jupyter
 pyspark
+oci
+h3
+SqlAlchemy
+pymysql
+user_agents
+h3_pyspark
+shapely
+sklearn
+scikit-learn
+scikit-build
+pandas
+delta-spark
