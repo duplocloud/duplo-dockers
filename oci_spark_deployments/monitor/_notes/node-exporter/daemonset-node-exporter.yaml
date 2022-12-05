@@ -1,0 +1,184 @@
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: prometheus
+rules:
+- apiGroups: [""]
+  resources:
+  - nodes
+  - nodes/proxy
+  - services
+  - endpoints
+  - pods
+  verbs: ["get", "list", "watch"]
+- apiGroups:
+  - extensions
+  resources:
+  - ingresses
+  verbs: ["get", "list", "watch"]
+- nonResourceURLs: ["/metrics"]
+  verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: prometheus
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: duploservices-ashspark
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: prometheus
+rules:
+- apiGroups: [""]
+  resources:
+  - nodes
+  - nodes/proxy
+  - services
+  - endpoints
+  - pods
+  verbs: ["get", "list", "watch"]
+- apiGroups:
+  - extensions
+  resources:
+  - ingresses
+  verbs: ["get", "list", "watch"]
+- nonResourceURLs: ["/metrics"]
+  verbs: ["get"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: prometheus
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: duploservices-ashspark
+---
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: ds-priority
+value: 1000000
+preemptionPolicy: PreemptLowerPriority
+globalDefault: false
+description: "DaemonSet services."
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  annotations:
+    duplocloud.net/managed-annotations: ""
+    duplocloud.net/managed-labels: ""
+  labels:
+    app: prometheus-node-exporter
+    owner: duploservices
+    tenantid: 94068d5a-20f6-421f-9e3d-b91d42cefe90
+    tenantname: duploservices-ashspark
+  name: prometheus-node-exporter
+  namespace: duploservices-ashspark
+spec:
+  selector:
+      matchLabels:
+        name: prometheus-node-exporter
+  template:
+    metadata:
+      labels:
+        name: prometheus-node-exporter
+    spec:
+      priorityClassName: ds-priority
+      containers:
+        - name: prometheus-node-exporter
+          image: duplocloud/anyservice:ociprometheus_v1
+          ports:
+            - name: prom-node-exp
+              containerPort: 9100
+              hostPort: 9100
+          resources:
+            limits:
+              memory: 200Mi
+            requests:
+              cpu: 100m
+              memory: 200Mi
+          volumeMounts:
+            - mountPath: /host/proc
+              name: proc
+              readOnly: false
+            - mountPath: /host/sys
+              name: sys
+              readOnly: false
+            - mountPath: /host/root
+              mountPropagation: HostToContainer
+              name: root
+              readOnly: true
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: { }
+      serviceAccount: default
+      serviceAccountName: default
+      terminationGracePeriodSeconds: 30
+      imagePullSecrets:
+        - name: duploservices-ashspark-dockerregistrycreds
+      volumes:
+        - name: kube-api-access-5skc4
+          projected:
+            defaultMode: 420
+            sources:
+              - serviceAccountToken:
+                  expirationSeconds: 3607
+                  path: token
+              - configMap:
+                  items:
+                    - key: ca.crt
+                      path: ca.crt
+                  name: kube-root-ca.crt
+              - downwardAPI:
+                  items:
+                    - fieldRef:
+                        apiVersion: v1
+                        fieldPath: metadata.namespace
+                      path: namespace
+        - hostPath:
+            path: /proc
+          name: proc
+        - hostPath:
+            path: /sys
+          name: sys
+        - hostPath:
+            path: /
+          name: root
+
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    prometheus.io/scrape: 'true'
+    prometheus.io/app-metrics: 'true'
+    prometheus.io/app-metrics-path: '/metrics'
+  name: prometheus-node-exporter
+  namespace: duploservices-ashspark
+  labels:
+    app: prometheus-node-exporter
+spec:
+  ports:
+    - name: prometheus-node-exporter
+      port: 9100
+      protocol: TCP
+  selector:
+    app: prometheus-node-exporter
+  type: ClusterIP
+

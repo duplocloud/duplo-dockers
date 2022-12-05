@@ -1,3 +1,21 @@
+##   refactoring scripts
+``` 
+cd /home/pravin/flex-e4-pravin/
+cd  ./flex_ashburn_spark_dep
+
+
+ls ../
+duplo_env.sh  flex_ashburn_spark_dep  tf_build_dockers.sh.log  tf_create.sh.log  tf_destory.sh.log  version_dockers.log  versions.log
+cat ../duplo_env.sh 
+
+sudo ./tf_build_dockers.sh 1 1 deljob1 v35 
+sudo ./tf_destory.sh 1 1 deljob1 v35
+
+sudo ./tf_create.sh 1 1 deljob1 v35 
+sudo ./tf_destory.sh 1 1 deljob1 v35
+```
+
+
 ### build  spark
 * cd sparkjpb
 * docker build -t duplocloud/anyservice:spark_job_3_2_v1 .

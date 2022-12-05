@@ -1,16 +1,68 @@
 <?xmY version="1.0" encoding="UTF-8" ?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.example</groupId>
     <artifactId>spark-streaming</artifactId>
     <version>0.1</version>
     <dependencies>
+        <!--        <dependency>-->
+        <!--            <groupId>org.apache.spark</groupId>-->
+        <!--            <artifactId>spark-sql-kafka-0-10_2.12</artifactId>-->
+        <!--            <version>3.2.1</version>-->
+        <!--        </dependency>-->
         <dependency>
-            <groupId>org.apache.spark</groupId>
-            <artifactId>spark-sql-kafka-0-10_2.12</artifactId>
+            <groupId>io.delta</groupId>
+            <artifactId>delta-contribs_2.13</artifactId>
+            <version>1.2.1</version>
+        </dependency>
+        <dependency>
+            <groupId>io.delta</groupId>
+            <artifactId>delta-core_2.13</artifactId>
+            <version>1.2.1</version>
+        </dependency>
+        <dependency>
+            <groupId>io.delta</groupId>
+            <artifactId>delta-storage</artifactId>
+            <version>1.2.1</version>
+        </dependency>
+        <dependency>
+            <groupId>io.delta</groupId>
+            <artifactId>delta-storage-s3-dynamodb</artifactId>
+            <version>1.2.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.hadoop</groupId>
+            <artifactId>hadoop-aws</artifactId>
             <version>3.2.1</version>
+        </dependency>
+
+        <!--        <dependency>-->
+        <!--             <groupId>com.oracle.oci.sdk</groupId>-->
+        <!--              <artifactId>oci-hdfs</artifactId>-->
+        <!--              <version>3.3.1.0.3.4</version>-->
+        <!--        </dependency>-->
+        <!--        <dependency>-->
+        <!--            <groupId>com.oracle.oci.sdk</groupId>-->
+        <!--            <artifactId>oci-hdfs-connector</artifactId>-->
+        <!--            <version>3.3.1.0.3.4</version>-->
+        <!--        </dependency>-->
+        <!--         <dependency>-->
+        <!--            <groupId>com.oracle.oci.sdk</groupId>-->
+        <!--            <artifactId>oci-java-sdk-objectstorage</artifactId>-->
+        <!--            <version>3.3.1.0.3.4</version>-->
+        <!--        </dependency>-->
+        <!--        <dependency>-->
+        <!--            <groupId>com.oracle.oci.sdk</groupId>-->
+        <!--            <artifactId>oci-java-sdk-addons-apache</artifactId>-->
+        <!--            <version>3.3.1.0.3.4</version>-->
+        <!--        </dependency>-->
+        <dependency>
+            <groupId>org.glassfish.jersey.connectors</groupId>
+            <artifactId>jersey-apache-connector</artifactId>
+            <version>3.1.0-M2</version>
         </dependency>
     </dependencies>
 </project>

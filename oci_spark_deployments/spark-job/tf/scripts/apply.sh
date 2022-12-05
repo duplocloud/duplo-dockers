@@ -57,4 +57,8 @@ tf_output() {
     tf output -json )
 }
 
-tf_apply spark "$@"
+echo "tf_apply $selection "
+echo "$@"
+tf_apply $selection "$@"
+echo "tf_apply $selection "
+

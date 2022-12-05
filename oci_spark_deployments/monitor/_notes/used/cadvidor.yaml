@@ -1,0 +1,96 @@
+
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  annotations:
+    duplocloud.net/managed-annotations: ""
+    duplocloud.net/managed-labels: ""
+    prometheus.io/scrape: 'true'
+    prometheus_io_scrape: "true"
+    prometheus_io_path: "/metrics"
+  labels:
+    app: cadvisor
+    owner: duploservices
+    tenantid: 94068d5a-20f6-421f-9e3d-b91d42cefe90
+    tenantname: duploservices-ashspark
+  name: cadvisor
+  namespace: duploservices-ashspark
+spec:
+  selector:
+    matchLabels:
+      name: cadvisor
+  template:
+    metadata:
+      labels:
+        name: cadvisor
+    spec:
+      containers:
+      - name: cadvisor
+        image: k8s.gcr.io/cadvisor:v0.30.2
+        resources:
+          requests:
+            memory: 200Mi
+            cpu: 150m
+          limits:
+            cpu: 300m
+        volumeMounts:
+        - name: rootfs
+          mountPath: /rootfs
+          readOnly: true
+        - name: var-run
+          mountPath: /var/run
+          readOnly: true
+        - name: sys
+          mountPath: /sys
+          readOnly: true
+        - name: docker
+          mountPath: /var/lib/docker
+          readOnly: true
+        ports:
+          - name: http
+            containerPort: 8080
+            protocol: TCP
+      restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: { }
+      serviceAccount: default
+      serviceAccountName: default
+      terminationGracePeriodSeconds: 30
+      imagePullSecrets:
+        - name: duploservices-ashspark-dockerregistrycreds
+      volumes:
+      - name: rootfs
+        hostPath:
+          path: /
+      - name: var-run
+        hostPath:
+          path: /var/run
+      - name: sys
+        hostPath:
+          path: /sys
+      - name: docker
+        hostPath:
+          path: /var/lib/docker
+
+---
+  kind: Service
+  apiVersion: v1
+  metadata:
+    annotations:
+      prometheus.io/scrape: 'true'
+      prometheus.io/path: '/metrics'
+      prometheus_io_scrape: "true"
+      prometheus_io_path: "/metrics"
+    labels:
+      name: cadvisor
+    name: cadvisor
+  spec:
+    selector:
+      app: cadvisor
+    type: ClusterIP
+    ports:
+      - name: cadvisor
+        protocol: TCP
+        port: 8080   
+

@@ -63,9 +63,6 @@ COPY requirements.txt .
 RUN pip install -r requirements.txt
 
 WORKDIR /home/centos
-#RUN cp  -r $LIVY_HOME/conf $LIVY_HOME/conf-origin
-#COPY livy.conf $LIVY_CONF_DIR/livy.conf
-#COPY livy-env.sh  $LIVY_CONF_DIR/livy-env.sh
 
 COPY *.sh .
 RUN chmod +x *.sh

@@ -1,8 +1,0 @@
-
-[DEFAULT]
-user=USER
-fingerprint=FINGERPRINT
-key_file=~/.oci/oci_api_key
-tenancy=TENANCY
-region=REGION
-

@@ -1,0 +1,54 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+    <project xmlns="http://maven.apache.org/POM/4.0.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <repositories>
+            <repository>
+                <id>MavenCentral</id>
+                <name>Maven repository</name>
+                <url>https://repo1.maven.org/maven2</url>
+                <releases>
+                    <enabled>true</enabled>
+                </releases>
+                <snapshots>
+                    <enabled>false</enabled>
+                </snapshots>
+            </repository>
+            <repository>
+                <id>Codehaus Snapshots</id>
+                <url>https://snapshots.repository.codehaus.org/</url>
+                <snapshots>
+                    <enabled>true</enabled>
+                </snapshots>
+                <releases>
+                    <enabled>false</enabled>
+                </releases>
+            </repository>
+        </repositories>
+
+
+        <pluginRepositories>
+            <pluginRepository>
+                <id>apache.snapshots</id>
+                <name>Apache Snapshot Repository</name>
+                <url>
+                    https://people.apache.org/repo/m2-snapshot-repository
+                </url>
+                <releases>
+                    <enabled>false</enabled>
+                </releases>
+            </pluginRepository>
+            <pluginRepository>
+                <id>Codehaus Snapshots</id>
+                <url>https://snapshots.repository.codehaus.org/</url>
+                <snapshots>
+                    <enabled>true</enabled>
+                </snapshots>
+                <releases>
+                    <enabled>false</enabled>
+                </releases>
+            </pluginRepository>
+        </pluginRepositories>
+
+
+    </project>
