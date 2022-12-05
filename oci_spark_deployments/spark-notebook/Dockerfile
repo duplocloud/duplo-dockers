@@ -7,12 +7,13 @@ RUN chmod +x *.sh
 
 USER centos
 # jupyter
-RUN mkdir -p /home/centos/notebook/mobility_eval
-COPY *.ipynb /home/centos/notebook/
-COPY mobility_eval/* /home/centos/notebook/mobility_eval/
-COPY work/ /home/centos/notebooks/
+COPY *.ipynb /home/centos/
+COPY mobility_eval/ /home/centos/mobility_eval/
+COPY work/ /home/centos/notebooks
 
-COPY requirements.txt .
-RUN pip install -r requirements.txt
+# sam as base
+#COPY requirements.txt .
+#RUN pip install -r requirements.txt
+#RUN python3 -m pip install dask distributed --upgrade
 
 CMD ["/bin/bash", "/home/centos/jupyter_statup.sh"]

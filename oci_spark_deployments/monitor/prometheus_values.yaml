@@ -1,0 +1,21 @@
+
+alertmanager:
+  alertmanagerSpec:
+    nodeSelector:
+      allocationtags: 'k8-monitoring'
+  service:
+    type: NodePort
+
+prometheus:
+  prometheusSpec:
+    allocationtags: 'k8-monitoring'
+  service:
+    type: NodePort
+
+grafana:
+  grafanaSpec:
+    allocationtags: 'k8-monitoring'
+  service:
+    type: NodePort
+
+

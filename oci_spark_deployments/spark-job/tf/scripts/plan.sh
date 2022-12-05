@@ -8,6 +8,7 @@ esac
 
 # Which project to run.
 selection="${1:-}"
+echo "selection ******==== $selection"
 [ $# -eq 0 ] || shift
 
 # Load environment and utility programs.
@@ -57,4 +58,7 @@ tf_output() {
         tf output -json )
 }
 
-tf_plan spark "$@"
+echo "tf_plan $selection "
+echo "$@"
+tf_plan $selection "$@"
+echo "tf_plan $selection "

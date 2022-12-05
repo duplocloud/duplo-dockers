@@ -1,0 +1,4 @@
+nodeSelector:
+  allocationtags: 'k8-monitoring'
+service:
+  type: NodePort

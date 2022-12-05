@@ -59,4 +59,9 @@ tf_output() {
         tf output -json )
 }
 
-tf_destroy spark "$@"
+#tf_destroy spark "$@"
+
+echo "tf_destroy $selection "
+echo "$@"
+tf_destroy $selection "$@"
+echo "tf_destroy $selection "

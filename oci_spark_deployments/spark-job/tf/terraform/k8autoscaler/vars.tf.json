@@ -1,0 +1,63 @@
+{
+  "variable": {
+    "tenant_name": {
+      "type": "string",
+      "default": "ocispark"
+    },
+    "oci_instance_principal": {
+      "type": "string",
+      "default": "instance_principal"
+    },
+    "oci_k8_auto_scaler_prefix": {
+     "type": "string",
+      "default": "k8autos"
+    },
+    "availability_domain": {
+      "type": "string",
+      "default": "uwFr:AP-MUMBAI-1-AD-1"
+    },
+    "subnetid": {
+      "type": "string",
+      "default": "ocid1.subnet.oc1.ap-mumbai-1.aaaaaaaasz36nwww2zygjn7arpuq4fbz3z22kn6adlalldvld3b5nu6afuxa"
+    },
+    "node_image_id": {
+      "type": "string",
+      "default": "ocid1.image.oc1.ap-mumbai-1.aaaaaaaagosxifkwha6a6pi2fxx4idf3te3icdsf7z6jar2sxls6xycnehna"
+    },
+
+    "oci_k8_ms_node_ocpus": {
+      "type": "number",
+      "default": 2
+    },
+    "oci_k8_ms_in_gbs": {
+      "type": "number",
+      "default": 32
+    },
+    "oci_k8_ms_instance_type": {
+      "type": "string",
+      "default": "VM.Standard.E4.Flex"
+    },
+
+
+    "oci_k8_as_node_ocpus": {
+      "type": "number",
+      "default": 2
+    },
+    "oci_k8_as_in_gbs": {
+      "type": "number",
+      "default": 32
+    },
+    "oci_k8_as_instance_type": {
+      "type": "string",
+      "default": "VM.Standard.E4.Flex"
+    },
+
+
+    "k8_as_name": {
+     "type": "string",
+      "default": "k8as"
+    }
+  }
+}
+
+

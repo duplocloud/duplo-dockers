@@ -4,6 +4,10 @@
       "type": "string",
       "default": "ocispark"
     },
+    "oci_instance_principal": {
+      "type": "string",
+      "default": "instance_principal"
+    },
     "oci_spark_cluster_prefix": {
       "type": "string",
       "default": "job15"
@@ -59,30 +63,6 @@
     "oci_spark_notebook_count": {
       "type": "number",
       "default": 1
-    },
-     "oci_profile_user": {
-      "type": "string",
-      "default": ""
-    },
-     "oci_profile_fingerprint": {
-      "type": "string",
-      "default": "us-ashburn-1"
-    },
-     "oci_profile_tenancy": {
-      "type": "string",
-      "default": ""
-    },
-     "oci_profile_region": {
-      "type": "string",
-      "default": ""
-    },
-     "oci_profile_key_file": {
-      "type": "string",
-      "default": "~/.oci/oci_api_key"
-    },
-    "oci_profile_key_local_path": {
-      "type": "string",
-      "default": "/home/pravin/oci_api_key"
     },
     "master_node_memory_in_gbs": {
       "type": "number",
