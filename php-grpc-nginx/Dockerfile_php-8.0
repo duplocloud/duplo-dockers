@@ -1,11 +1,11 @@
-FROM trafex/php-nginx:latest
+FROM trafex/php-nginx:2.5.0
 # Install composer from the official image
 COPY --from=composer/composer /usr/bin/composer /usr/bin/composer
 
 # Install zip and pdo so that composer works
 # Add whatever other php extensions you need in the image here
 USER root
-RUN apk add --no-cache gcc musl-dev php81-zip php81-pdo autoconf php81-dev php81-pear php81-pear zlib-dev make g++ linux-headers
+RUN apk add --no-cache gcc musl-dev php8-zip php8-pdo autoconf php8-dev php8-pear php8-pear zlib-dev make g++ linux-headers
 # set back to non-root after installing extensions
 
-RUN pecl81 install grpc-1.33.1
+RUN pecl8 install grpc-1.33.1
