@@ -1,24 +1,42 @@
 terraform {
-  required_version = ">= 0.14.0"
+//  required_version = "~> 0.14"
   required_providers {
     duplocloud = {
-      source  = "duplocloud/duplocloud"
+     # version = "~> 0.11.28"
       version = "~> 0.9.1"
+      source = "duplocloud/duplocloud"
     }
-    postgresql = {
-      source  = "cyrilgdn/postgresql"
-      version = "1.18.0"
-    }
-    local = {}
+//    helm = { version = "~> 2.0" }
   }
 }
-provider "duplocloud" {
 
-}
 provider "aws" {
-  region = var.region
+  region = "us-west-2"
 }
 
+provider "duplocloud" {}
+
+locals {
+  tenant_name = var.tenant_name
+  tenant_id = data.duplocloud_tenant.this.id
+
+  account_id = data.duplocloud_aws_account.this.account_id
+  region = data.duplocloud_tenant_aws_region.this.aws_region
+  zone_count = 2
+
+}
+
+data "duplocloud_tenant" "this" {
+  name = local.tenant_name
+}
+
+data "duplocloud_aws_account" "this" {
+  tenant_id = local.tenant_id
+}
+
+data "duplocloud_tenant_aws_region" "this" {
+  tenant_id = local.tenant_id
+}
 
 
 
@@ -29,7 +47,7 @@ resource "random_password" "rds_password" {
 
 resource "duplocloud_rds_instance" "postgres" {
   tenant_id      = local.tenant_id
-  name           = local.tenant_name
+  name           = var.postgres_db_name
   engine         = 1
   engine_version = var.postgres_db_engine_version
   size           = var.postgres_db_size

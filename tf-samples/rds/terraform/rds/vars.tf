@@ -3,6 +3,12 @@ variable "region" {
   type    = string
 }
 
+variable "tenant_name" {
+  default = "pravin"
+  type    = string
+}
+
+
 variable "s3_backend_region" {
   default = "us-west-2"
   type    = string
@@ -14,6 +20,10 @@ variable "postgres_db_engine_version" {
   default = "13.7"
 }
 
+variable "postgres_db_name" {
+  type    = string
+  default = "db3"
+}
 variable "postgres_db_size" {
   type    = string
   default = "db.t3.micro"
