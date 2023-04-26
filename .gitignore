@@ -128,3 +128,6 @@ terraform-provider-*
 #backend.tf
 .terraform.lock.hcl
 dist/
+
+
+env.sh
