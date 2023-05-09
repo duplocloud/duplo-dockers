@@ -12,8 +12,11 @@ export duplo_token=
 
 
 
-### ==== duplo
 
+### ==== duplo
+export duplo_host="https://test05.duplocloud.net"
+export AWS_RUNNER=duplo-admin
+export AWS_REGION=us-west-2
 
 export TF_VAR_tenant_name=ts-t
-export TF_VAR_postgres_db_name=db23
+export TF_VAR_db_name=rds27

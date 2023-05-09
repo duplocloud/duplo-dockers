@@ -75,7 +75,7 @@ resource "duplocloud_rds_read_replica" "postgresreplica" {
 resource "duplocloud_rds_instance" "au_mysql" {
   tenant_id      = local.tenant_id
   name           = local.au_mysql_db_name
-  engine         = 1
+  engine         = 8
   engine_version = var.au_mysql_db_engine_version
   size           = var.au_mysql_db_size
 

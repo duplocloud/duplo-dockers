@@ -32,7 +32,7 @@ variable "postgres_db_size" {
 
 variable "au_mysql_db_engine_version" {
   type    = string
-  default = "8.0.mysql_aurora.3.03.0"
+  default = "8.0.mysql_aurora.3.02.3"
 }
 
 variable "au_mysql_db_size" {
