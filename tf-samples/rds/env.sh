@@ -11,3 +11,9 @@ export AWS_ACCOUNT_ID=
 export duplo_token=
 
 
+
+### ==== duplo
+
+
+export TF_VAR_tenant_name=ts-t
+export TF_VAR_postgres_db_name=db23
