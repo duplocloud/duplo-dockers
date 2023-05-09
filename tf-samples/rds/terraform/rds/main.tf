@@ -2,8 +2,8 @@ terraform {
 //  required_version = "~> 0.14"
   required_providers {
     duplocloud = {
-      version = "~> 0.11.28"
-      # version = "~> 0.9.1"
+      #version = "~> 0.11.28"
+      version = "~> 0.9.1"
       source = "duplocloud/duplocloud"
     }
 //    helm = { version = "~> 2.0" }
