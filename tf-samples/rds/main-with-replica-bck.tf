@@ -3,7 +3,7 @@ terraform {
   required_providers {
     duplocloud = {
       #version = "~> 0.11.28"
-      version = "~> 0.9.30"
+      version = "~> 0.9"
       source = "duplocloud/duplocloud"
     }
 //    helm = { version = "~> 2.0" }
@@ -62,6 +62,13 @@ resource "duplocloud_rds_instance" "postgres" {
   deletion_protection = false
 }
 
+resource "duplocloud_rds_read_replica" "postgresreplica" {
+  tenant_id          = duplocloud_rds_instance.postgres.tenant_id
+  name               = local.pg_replica_db_name
+  size               = var.postgres_db_size
+  cluster_identifier = duplocloud_rds_instance.postgres.cluster_identifier
+}
+
 
 
 
@@ -79,7 +86,12 @@ resource "duplocloud_rds_instance" "au_mysql" {
   deletion_protection = false
 }
 
-
+resource "duplocloud_rds_read_replica" "au_mysql" {
+  tenant_id          = duplocloud_rds_instance.au_mysql.tenant_id
+  name               = local.au_mysql_replica_db_name
+  size               = var.au_mysql_db_size
+  cluster_identifier = duplocloud_rds_instance.au_mysql.cluster_identifier
+}
 
 
 resource "time_sleep" "wait_30_seconds" {
