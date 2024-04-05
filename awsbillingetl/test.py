@@ -3,7 +3,7 @@ from app import AwsBillingReports
 
 def main():
     awsBillingReports = AwsBillingReports()
-    awsBillingReports._listS3Billingfiles()
+    awsBillingReports.etl_on_customer_billing_s3_buckets("billing-reports")
     return 'test Python!'
 
 if __name__ == "__main__":
