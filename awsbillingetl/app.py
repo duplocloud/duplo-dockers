@@ -1,3 +1,4 @@
+import datetime
 import json
 import os
 import pandas as pd
@@ -6,113 +7,123 @@ import sys
 import shutil
 
 class S3BillingFile:
-    def __init__(self, bucket, filname, dataFolder):
-        self.bucket_name = bucket
-        self.s3_object_key = filname
-        self.local_file_name = dataFolder + os.path.basename(filname)
+    def __init__(self, index, bucket_name, file_name, file_size, data_folder):
+        self.index = index
+        self.bucket_name = bucket_name
+        self.s3_object_key = file_name
+        self.file_size = file_size
+        self.local_file_name = data_folder + str(index) + "-" + os.path.basename(file_name)
+        print(self.index, self.local_file_name, "size", file_size, "bucket", bucket_name, "s3-file", self.s3_object_key)
+
 
 
 class AwsBillingReports:
 
     def __init__(self):
-        self.outFolder="/tmp"
-        self.tempOutFolder = self.outFolder + "/reports_temp/"
-        self.billingCsvFolder = self.outFolder + "/reports_combined/"
-        self.dataFolder = self.outFolder + "/data/"
-        self.destS3Bucket = "duplo-billing-reports"
+        self.file_count = self.file_max_count = 10000000
+        self.file_count = 0
+        self.out_folder = "/tmp"
+        self.temp_out_folder = self.out_folder + "/reports_temp/"
+        self.billing_csv_folder = self.out_folder + "/reports_combined/"
+        self.data_folder = self.out_folder + "/data/"
+        self.dest_s3_bucket = "duplo-billing-reports"
+        self.start = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.s3_client = boto3.client('s3')
 
-    def _create_csvs(self, jsonfile):
-        with open(jsonfile) as f:
+    # def s3_client(self):
+    #     return self._s3_client
+
+    def _create_csvs(self, json_file):
+        with open(json_file) as f:
             data = json.load(f)
-
         host = data["Host"]
         customer = data["CustomerName"]
-        customerId = data["CustomerId"]
-        awsAccountId = data["AwsAccountId"]
-        monthlyData = data['data']['Monthly']
-        monthlyBill = []
-        servicesBill = []
-        tenantsBill = []
-        tenantsServiceBill = []
-        for startDate in monthlyData:
-            billingData = monthlyData[startDate]
-            tenants = monthlyData[startDate]['Tenants']
-            services = monthlyData[startDate]['Services']
-            monthlyBill.append({
+        customer_id = data["CustomerId"]
+        aws_account_id = data["AwsAccountId"]
+        monthly_data = data['data']['Monthly']
+        monthly_bill = []
+        services_bill = []
+        tenants_bill = []
+        tenants_service_bill = []
+        for start_date in monthly_data:
+            billing_data = monthly_data[start_date]
+            tenants = monthly_data[start_date]['Tenants']
+            services = monthly_data[start_date]['Services']
+            monthly_bill.append({
                 'Customer': customer,
                 'Host': host,
-                'CustomerId': customerId,
-                'AwsAccountId': awsAccountId,
-                'StartDate': startDate,
-                'Total': billingData['T'],
-                'Weekly': json.dumps(billingData['W']),
+                'CustomerId': customer_id,
+                'AwsAccountId': aws_account_id,
+                'StartDate': start_date,
+                'Total': billing_data['T'],
+                'Weekly': json.dumps(billing_data['W']),
                 'Service': None,
                 'Tenant': None,
-                'Usage': billingData['Usage'],
-                'Tax': billingData['Tax'],
-                'Support': billingData['Support'],
-                'Other': billingData['Other'],
+                'Usage': billing_data['Usage'],
+                'Tax': billing_data['Tax'],
+                'Support': billing_data['Support'],
+                'Other': billing_data['Other'],
             })
-            self._process_tenants(tenantsServiceBill, tenantsBill, startDate, tenants, customer, host, customerId,
-                                 awsAccountId)
-            self._process_services(servicesBill, startDate, services, customer, host, customerId, awsAccountId)
+            self._process_tenants(tenants_service_bill, tenants_bill, start_date, tenants, customer, host, customer_id,
+                                  aws_account_id)
+            self._process_services(services_bill, start_date, services, customer, host, customer_id, aws_account_id)
 
-        # out monthly.csv
-        monthlyDf = pd.DataFrame(monthlyBill)
-        monthlyDf = monthlyDf.filter(
+        # Output monthly.csv
+        monthly_df = pd.DataFrame(monthly_bill)
+        monthly_df = monthly_df.filter(
             ['StartDate', 'Customer', 'Host', 'CustomerId', 'AwsAccountId', 'Total', 'Weekly', 'Usage', 'Tax',
              'Support', 'Other'])
-        self._save_csv(monthlyDf, "monthly.csv")
+        self._save_csv(monthly_df, "monthly.csv")
 
-        # out service.csv
-        servicesBillDf = pd.DataFrame(servicesBill)
-        servicesBillDf = servicesBillDf.filter(
+        # Output service.csv
+        services_bill_df = pd.DataFrame(services_bill)
+        services_bill_df = services_bill_df.filter(
             ['StartDate', 'Customer', 'Host', 'CustomerId', 'AwsAccountId', 'Total', 'Weekly', 'Service'])
-        self._save_csv(servicesBillDf, "service.csv")
+        self._save_csv(services_bill_df, "service.csv")
 
-        # out tenant.csv
-        tenantsBillDf = pd.DataFrame(tenantsBill)
-        tenantsBillDf = tenantsBillDf.filter(
+        # Output tenant.csv
+        tenants_bill_df = pd.DataFrame(tenants_bill)
+        tenants_bill_df = tenants_bill_df.filter(
             ['StartDate', 'Customer', 'Host', 'CustomerId', 'AwsAccountId', 'Total', 'Weekly', 'Tenant'])
-        self._save_csv(tenantsBillDf, "tenant.csv")
+        self._save_csv(tenants_bill_df, "tenant.csv")
 
-        #  out tenant-service.csv
-        tenantsServiceBillDf = pd.DataFrame(tenantsServiceBill)
-        tenantsServiceBillDf = tenantsServiceBillDf.filter(
+        # Output tenant-service.csv
+        tenants_service_bill_df = pd.DataFrame(tenants_service_bill)
+        tenants_service_bill_df = tenants_service_bill_df.filter(
             ['StartDate', 'Customer', 'Host', 'CustomerId', 'AwsAccountId', 'Total', 'Weekly', 'Service', 'Tenant'])
-        self._save_csv(tenantsServiceBillDf, "tenantService.csv")
+        self._save_csv(tenants_service_bill_df, "tenantService.csv")
 
-        # out billing-all.csv
-        allBill = monthlyBill + tenantsBill + servicesBill + tenantsServiceBill
-        allDf = pd.DataFrame(allBill)
-        self._save_csv(allDf, "billingAll.csv")
+        # Output billing-all.csv
+        all_bill = monthly_bill + tenants_bill + services_bill + tenants_service_bill
+        all_df = pd.DataFrame(all_bill)
+        self._save_csv(all_df, "billingAll.csv")
 
-    def _save_csv(self, df, csvName):
-        tempfile = self.tempOutFolder + csvName
-        combinedfile = self.billingCsvFolder +  csvName
-        exists = os.path.exists(combinedfile)
-        if (not exists):
-            df.to_csv(combinedfile, index=False, header=True)
-            print(combinedfile)
+    def _save_csv(self, df, csv_name):
+        temp_file = self.temp_out_folder + csv_name
+        combined_file = self.billing_csv_folder + csv_name
+        exists = os.path.exists(combined_file)
+        if not exists:
+            df.to_csv(combined_file, index=False, header=True)
+            self._log(self.file_count, "combinedfile", combined_file)
         else:
-            df.to_csv(tempfile, index=False, header=False)
-            with open(tempfile, 'r') as source_file, open(combinedfile, 'a') as destination_file:
+            df.to_csv(temp_file, index=False, header=False)
+            with open(temp_file, 'r') as source_file, open(combined_file, 'a') as destination_file:
                 content = source_file.read()
                 destination_file.write(content)
 
-    def _process_tenants(self, tenantsServiceBill, billing, startDate, tenants, customer,
-                        host, customerId, awsAccountId):
+    def _process_tenants(self, tenants_service_bill, billing, start_date, tenants, customer,
+                         host, customer_id, aws_account_id):
         for tenant in tenants:
-            billingData = tenants[tenant]
+            billing_data = tenants[tenant]
             services = tenants[tenant]['Services']
             billing.append({
                 'Customer': customer,
                 'Host': host,
-                'CustomerId': customerId,
-                'AwsAccountId': awsAccountId,
-                'StartDate': startDate,
-                'Total': billingData['T'],
-                'Weekly': json.dumps(billingData['W']),
+                'CustomerId': customer_id,
+                'AwsAccountId': aws_account_id,
+                'StartDate': start_date,
+                'Total': billing_data['T'],
+                'Weekly': json.dumps(billing_data['W']),
                 'Service': None,
                 'Tenant': tenant,
                 'Usage': None,
@@ -120,17 +131,17 @@ class AwsBillingReports:
                 'Support': None,
                 'Other': None,
             })
-            self._process_services(tenantsServiceBill, startDate, services, customer,
-                                  host, customerId, awsAccountId, tenant)
+            self._process_services(tenants_service_bill, start_date, services, customer,
+                                   host, customer_id, aws_account_id, tenant)
 
-    def _process_services(self, bill, startDate, services, customer, host, customerId, awsAccountId, tenant=None):
+    def _process_services(self, bill, start_date, services, customer, host, customer_id, aws_account_id, tenant=None):
         for service in services:
             data = services[service]
             bill.append({'Customer': customer,
                          'Host': host,
-                         'CustomerId': customerId,
-                         'AwsAccountId': awsAccountId,
-                         'StartDate': startDate,
+                         'CustomerId': customer_id,
+                         'AwsAccountId': aws_account_id,
+                         'StartDate': start_date,
                          'Total': data['T'],
                          'Weekly': json.dumps(data['W']),
                          'Service': service,
@@ -141,67 +152,94 @@ class AwsBillingReports:
                          'Other': None,
                          })
 
-    def upload_csv_files(self, uploadS3Folder):
-        s3 = boto3.client('s3')
-        for csv in os.listdir(self.billingCsvFolder):
-            if csv.endswith(".csv"):
-                print(csv)
-                with open(self.billingCsvFolder + csv, "rb") as f:
-                    s3.upload_fileobj(f, self.destS3Bucket, uploadS3Folder+"/"+csv)
+    def upload_csv_files(self, upload_s3_folder):
+        for csv_file in os.listdir(self.billing_csv_folder):
+            if csv_file.endswith(".csv"):
+                file_path = self.billing_csv_folder + csv_file
+                file_stats = os.stat(file_path)
+                file_size = f"{round(file_stats.st_size / 1024)} kB"
+                self._log(self.file_count, "csv", file_path, "fileSize", file_size)
+                with open(file_path, "rb") as f:
+                    self.s3_client.upload_fileobj(f, self.dest_s3_bucket, upload_s3_folder + "/" + csv_file)
 
-    def etl_on_customer_billing_s3_buckets(self, uploadS3Folder):
-        print("tempOutFolder ", self.tempOutFolder)
-        print("billingCsvFolder", self.tempOutFolder)
-        print("dataFolder", self.dataFolder)
-        self.recreate_local_folder(self.tempOutFolder)
-        self.recreate_local_folder(self.billingCsvFolder)
-        self.recreate_local_folder(self.dataFolder)
-        s3FilePreFix = "data/billing-data-12months/last-12-months/"
-        #s3FilePreFix = "data/billing/last-12months/"
-        s3BucketPrefix = "duplo-analytics-"
+    def etl_on_customer_billing_s3_buckets(self, upload_s3_folder):
+        self._log(self.file_count, "temp_out_folder ", self.temp_out_folder)
+        self._log(self.file_count, "billing_csv_folder", self.temp_out_folder)
+        self._log(self.file_count, "data_folder", self.data_folder)
+        self.recreate_local_folder(self.temp_out_folder)
+        self.recreate_local_folder(self.billing_csv_folder)
+        self.recreate_local_folder(self.data_folder)
 
-        s3 = boto3.client('s3')
-        response = s3.list_buckets()
-        buckets = [bucket['Name'] for bucket in response['Buckets'] if bucket['Name'].startswith(s3BucketPrefix)]
+        #s3_file_prefix = "data/billing-data-12months/last-12-months/"
+        s3_file_prefix = "data/billing/aws/"
+        s3_bucket_prefix = "duplo-analytics-"
+
+        response = self.s3_client.list_buckets()
+        buckets = [bucket['Name'] for bucket in response['Buckets'] if bucket['Name'].startswith(s3_bucket_prefix)]
 
         billing_data_files = []
         for bucket in buckets:
-            paginator = s3.get_paginator('list_objects_v2')
+            paginator = self.s3_client.get_paginator('list_objects_v2')
             for page in paginator.paginate(Bucket=bucket):
+                self._log(self.file_count,"bucket", bucket)
                 for obj in page.get('Contents', []):
-                    filname = obj['Key']
-                    if s3FilePreFix in filname:
-                        billing_data_files.append(S3BillingFile(bucket, filname, self.dataFolder))
-        for s3BillingFile in billing_data_files:
-            self._process_s3_billing_file(s3BillingFile)
+                    file_name = obj['Key']
+                    file_size = obj['Size']
+                    if s3_file_prefix in file_name and "json" in file_name:
+                        self.file_count += 1
+                        s3_billing_file = S3BillingFile(self.file_count, bucket, file_name, file_size, self.data_folder)
+                        self._process_s3_billing_file(s3_billing_file)
+                        # self._log(self.file_count, "incrementing")
+                        # billing_data_files.append(S3BillingFile(self.file_count, bucket, file_name, file_size, self.data_folder))
+        # self._log(self.file_count, "Done pulling file names")
+        # self.file_count = 0
+        # for s3_billing_file in billing_data_files:
+        #     self._process_s3_billing_file(s3_billing_file)
 
-        # upload
-        self.upload_csv_files(uploadS3Folder)
+        # Upload
+        self.upload_csv_files(upload_s3_folder)
 
-    def _process_s3_billing_file(self, s3BillingFile):
-        print("_process_s3_billing_file " + s3BillingFile.bucket_name
-              + " " + s3BillingFile.s3_object_key + " "
-              + s3BillingFile.local_file_name)
-        s3 = boto3.client('s3')
-        s3.download_file(s3BillingFile.bucket_name, s3BillingFile.s3_object_key, s3BillingFile.local_file_name)
-        self._create_csvs(s3BillingFile.local_file_name)
-
+    def _process_s3_billing_file(self, s3_billing_file):
+        self.file_count += 1
+        self.file_count = s3_billing_file.index
+        self._log(self.file_count, "_process_s3_billing_file " + s3_billing_file.bucket_name
+              + " " + s3_billing_file.s3_object_key + " "
+              + s3_billing_file.local_file_name)
+        self.s3_client.download_file(s3_billing_file.bucket_name, s3_billing_file.s3_object_key, s3_billing_file.local_file_name)
+        self._create_csvs(s3_billing_file.local_file_name)
+        self.delete_local_file(s3_billing_file.local_file_name)
 
     def recreate_local_folder(self, folder_path):
         try:
-            print("Folder delete " + folder_path)
+            self._log(self.file_count, "Folder delete " + folder_path)
             shutil.rmtree(folder_path)
-            print("Folder deleted successfully " + folder_path)
+            self._log(self.file_count, "Folder deleted successfully " + folder_path)
         except Exception as e:
-            print(f"Error delete occurred: {e} " + folder_path)
+            self._log(self.file_count, f"Error Folder delete occurred: {e} " + folder_path)
         os.makedirs(folder_path, exist_ok=True)
 
+    def delete_local_file(self, file_path):
+        try:
+            self._log(self.file_count, "File delete " + file_path)
+            os.remove(file_path)
+            self._log(self.file_count, "File deleted successfully " + file_path)
+        except FileNotFoundError:
+            self._log(self.file_count, f"The file {file_path} does not exist.")
+        except OSError as error:
+            self._log(self.file_count, f"Error: {error}")
+        except Exception as e:
+            self._log(self.file_count, f"Error delete occurred: {e} " + file_path)
 
+    def _log(self, message, *args, **kwargs):
+        # timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        # print(f"{timestamp} - {message}", *args, **kwargs)
+        print(f"{message}", *args, **kwargs)
 
 def handler(event, context):
-    awsBillingReports = AwsBillingReports()
-    awsBillingReports.etl_on_customer_billing_s3_buckets("billing-reports")
-    return 'dummy resp' + sys.version + '!'
+    aws_billing_reports = AwsBillingReports()
+    aws_billing_reports.etl_on_customer_billing_s3_buckets("billing-reports")
+    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    return f"total reports: {str(aws_billing_reports.file_count)}, start: {aws_billing_reports.start}, end: {timestamp}, v:{sys.version} !"
 
 
 # handler(None, None)
