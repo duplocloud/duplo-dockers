@@ -129,5 +129,6 @@ terraform-provider-*
 .terraform.lock.hcl
 dist/
 
-
+._.DS_Store
+tmp/
 env.sh

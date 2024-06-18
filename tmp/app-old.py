@@ -8,12 +8,12 @@ import shutil
 
 class S3BillingFile:
     def __init__(self, index, bucket_name, file_name, file_size, data_folder):
-        self.file_index = index
+        self.index = index
         self.bucket_name = bucket_name
         self.s3_object_key = file_name
         self.file_size = file_size
         self.local_file_name = data_folder + str(index) + "-" + os.path.basename(file_name)
-        print(self.file_index, self.local_file_name, "size", file_size, "bucket", bucket_name, "s3-file", self.s3_object_key)
+        print(self.index, self.local_file_name, "size", file_size, "bucket", bucket_name, "s3-file", self.s3_object_key)
 
 
 
@@ -29,8 +29,9 @@ class AwsBillingReports:
         self.dest_s3_bucket = "duplo-billing-reports"
         self.start = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.s3_client = boto3.client('s3')
-        self.billing_report_files = []
-        self.empty_buckets = []
+
+    # def s3_client(self):
+    #     return self._s3_client
 
     def _create_csvs(self, json_file):
         with open(json_file) as f:
@@ -161,7 +162,6 @@ class AwsBillingReports:
                 with open(file_path, "rb") as f:
                     self.s3_client.upload_fileobj(f, self.dest_s3_bucket, upload_s3_folder + "/" + csv_file)
 
-
     def etl_on_customer_billing_s3_buckets(self, upload_s3_folder):
         self._log(self.file_count, "temp_out_folder ", self.temp_out_folder)
         self._log(self.file_count, "billing_csv_folder", self.temp_out_folder)
@@ -177,13 +177,11 @@ class AwsBillingReports:
         response = self.s3_client.list_buckets()
         buckets = [bucket['Name'] for bucket in response['Buckets'] if bucket['Name'].startswith(s3_bucket_prefix)]
 
-
+        billing_data_files = []
         for bucket in buckets:
             paginator = self.s3_client.get_paginator('list_objects_v2')
             for page in paginator.paginate(Bucket=bucket):
                 self._log(self.file_count,"bucket", bucket)
-                if len(page.get('Contents', []))== 0:
-                    self.empty_buckets.append(bucket)
                 for obj in page.get('Contents', []):
                     file_name = obj['Key']
                     file_size = obj['Size']
@@ -191,46 +189,19 @@ class AwsBillingReports:
                         self.file_count += 1
                         s3_billing_file = S3BillingFile(self.file_count, bucket, file_name, file_size, self.data_folder)
                         self._process_s3_billing_file(s3_billing_file)
-                        self.billing_report_files.append(s3_billing_file)
+                        # self._log(self.file_count, "incrementing")
+                        # billing_data_files.append(S3BillingFile(self.file_count, bucket, file_name, file_size, self.data_folder))
+        # self._log(self.file_count, "Done pulling file names")
+        # self.file_count = 0
+        # for s3_billing_file in billing_data_files:
+        #     self._process_s3_billing_file(s3_billing_file)
 
-        # save empty buckets
-        self._save_empty_buckets_csv()
-        # save processed files
-        self._save_billing_report_csv()
-        # Upload csvs
+        # Upload
         self.upload_csv_files(upload_s3_folder)
-
-    def _save_empty_buckets_csv(self):
-        empty_buckets_file = self.billing_csv_folder + "empty_buckets.csv"
-        empty_buckets_json = json.dumps([{
-            "bucket": bucket
-        } for bucket in self.empty_buckets])
-        sum_df = pd.read_json(empty_buckets_json)
-        sum_df.to_csv(empty_buckets_file, index=False, header=True)
-
-    def convert_size(self, bytes):
-        kb = bytes / 1024
-        mb = kb / 1024
-        if mb >= 1:
-            return f"{mb:.2f} MB"
-        elif kb >= 1:
-            return f"{kb:.2f} KB"
-        else:
-            return f"{bytes} bytes"
-    def _save_billing_report_csv(self):
-        billing_report_file = self.billing_csv_folder + "billing_report_files.csv"
-        billing_report_json = json.dumps([{
-            "file_index": s3_file.file_index,
-            "file_size": self.convert_size(s3_file.file_size),
-            "bucket_name": s3_file.bucket_name,
-            "s3_object_key": s3_file.s3_object_key
-        } for s3_file in self.billing_report_files])
-        sum_df = pd.read_json(billing_report_json)
-        sum_df.to_csv(billing_report_file, index=False, header=True)
 
     def _process_s3_billing_file(self, s3_billing_file):
         self.file_count += 1
-        self.file_count = s3_billing_file.file_index
+        self.file_count = s3_billing_file.index
         self._log(self.file_count, "_process_s3_billing_file " + s3_billing_file.bucket_name
               + " " + s3_billing_file.s3_object_key + " "
               + s3_billing_file.local_file_name)
@@ -266,9 +237,9 @@ class AwsBillingReports:
 
 def handler(event, context):
     aws_billing_reports = AwsBillingReports()
-    aws_billing_reports.etl_on_customer_billing_s3_buckets("aws")
+    aws_billing_reports.etl_on_customer_billing_s3_buckets("billing-reports")
     timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     return f"total reports: {str(aws_billing_reports.file_count)}, start: {aws_billing_reports.start}, end: {timestamp}, v:{sys.version} !"
 
 
-#handler(None, None)
+# handler(None, None)
