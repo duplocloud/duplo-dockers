@@ -5,13 +5,18 @@ import pandas as pd
 import boto3
 import sys
 import shutil
+from io import StringIO
+from datetime import datetime, time, timedelta
+import pytz
 
 class S3BillingFile:
-    def __init__(self, index, bucket_name, file_name, file_size, data_folder):
+    def __init__(self, index, bucket_name, file_name, file_size, file_date, data_folder):
         self.file_index = index
         self.bucket_name = bucket_name
         self.s3_object_key = file_name
         self.file_size = file_size
+        self.last_modified = file_date.strftime('%Y-%m-%d %H:%M:%S')
+        self.file_date = file_date
         self.local_file_name = data_folder + str(index) + "-" + os.path.basename(file_name)
         print(self.file_index, self.local_file_name, "size", file_size, "bucket", bucket_name, "s3-file", self.s3_object_key)
 
@@ -27,10 +32,12 @@ class AwsBillingReports:
         self.billing_csv_folder = self.out_folder + "/reports_combined/"
         self.data_folder = self.out_folder + "/data/"
         self.dest_s3_bucket = "duplo-billing-reports"
-        self.start = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        self.start = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.s3_client = boto3.client('s3')
         self.billing_report_files = []
         self.empty_buckets = []
+        self.cleanup_events_cutoff_date = datetime.now() - timedelta(days=10)
+        self.cleanup_events_cutoff_date = self.cleanup_events_cutoff_date.replace(tzinfo=pytz.utc)
 
     def _create_csvs(self, json_file):
         with open(json_file) as f:
@@ -187,11 +194,22 @@ class AwsBillingReports:
                 for obj in page.get('Contents', []):
                     file_name = obj['Key']
                     file_size = obj['Size']
+                    file_date = obj['LastModified']
                     if s3_file_prefix in file_name and "json" in file_name:
-                        self.file_count += 1
-                        s3_billing_file = S3BillingFile(self.file_count, bucket, file_name, file_size, self.data_folder)
-                        self._process_s3_billing_file(s3_billing_file)
-                        self.billing_report_files.append(s3_billing_file)
+                        if file_date < self.cleanup_events_cutoff_date and "json" in file_name:
+                            print("found delete file_name ", file_name)
+                            try:
+                                #self.s3_client.delete_object(Bucket=self.dest_s3_bucket, Key=file_name)
+                                print(f"Successfully deleted old file {self.dest_s3_bucket}/{file_name} file_date: {file_date.strftime('%Y-%m-%d %H:%M:%S')}")
+                            except Exception as e:
+                                print(f"Successfully deleted old file {self.dest_s3_bucket}/{file_name} file_date: {file_date.strftime('%Y-%m-%d %H:%M:%S')}"
+                                      f" file: {file_name} {str(e)}")
+                        else:
+                            self.file_count += 1
+                            s3_billing_file = S3BillingFile(self.file_count, bucket, file_name, file_size, file_date,
+                                                            self.data_folder)
+                            self._process_s3_billing_file(s3_billing_file)
+                            self.billing_report_files.append(s3_billing_file)
 
         # save empty buckets
         self._save_empty_buckets_csv()
@@ -205,7 +223,7 @@ class AwsBillingReports:
         empty_buckets_json = json.dumps([{
             "bucket": bucket
         } for bucket in self.empty_buckets])
-        sum_df = pd.read_json(empty_buckets_json)
+        sum_df = pd.read_json(StringIO(empty_buckets_json))
         sum_df.to_csv(empty_buckets_file, index=False, header=True)
 
     def convert_size(self, bytes):
@@ -221,11 +239,12 @@ class AwsBillingReports:
         billing_report_file = self.billing_csv_folder + "billing_report_files.csv"
         billing_report_json = json.dumps([{
             "file_index": s3_file.file_index,
+            "last_modified": s3_file.last_modified,
             "file_size": self.convert_size(s3_file.file_size),
             "bucket_name": s3_file.bucket_name,
             "s3_object_key": s3_file.s3_object_key
         } for s3_file in self.billing_report_files])
-        sum_df = pd.read_json(billing_report_json)
+        sum_df = pd.read_json(StringIO(billing_report_json))
         sum_df.to_csv(billing_report_file, index=False, header=True)
 
     def _process_s3_billing_file(self, s3_billing_file):
@@ -260,14 +279,14 @@ class AwsBillingReports:
             self._log(self.file_count, f"Error delete occurred: {e} " + file_path)
 
     def _log(self, message, *args, **kwargs):
-        # timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        # timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         # print(f"{timestamp} - {message}", *args, **kwargs)
         print(f"{message}", *args, **kwargs)
 
 def handler(event, context):
     aws_billing_reports = AwsBillingReports()
     aws_billing_reports.etl_on_customer_billing_s3_buckets("aws")
-    timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     return f"total reports: {str(aws_billing_reports.file_count)}, start: {aws_billing_reports.start}, end: {timestamp}, v:{sys.version} !"
 
 

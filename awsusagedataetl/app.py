@@ -15,6 +15,7 @@ class AnalyticsS3File:
         self.file_name = os.path.basename(file_name)
         self.s3_object_key = file_name
         self.file_size = file_size
+        self.last_modified = file_date.strftime('%Y-%m-%d %H:%M:%S')
         self.file_date = file_date
         self.local_file_name = data_folder + str(index) + "-" + os.path.basename(file_name)
         print(self.index, self.local_file_name, "size", file_size, "file_date", file_date, "bucket", bucket_name, "s3-file", self.s3_object_key)
@@ -25,6 +26,7 @@ class DuploAwsAnalyticsEtl:
         # event
         self.event="usagedata"
         self.s3_dest_sub_folder = "segment"
+
         # src s3
         self.s3_src_file_prefix = "data/" + self.event + "/" + self.s3_dest_sub_folder
         self.s3_src_bucket_prefix = "duplo-analytics-"
@@ -77,11 +79,11 @@ class DuploAwsAnalyticsEtl:
 
         # save processed files
         try:
-            print(f"start  self._save_analytics_event_report_csv()")
-            self._save_analytics_event_report_csv()
-            print( f"done  self._save_analytics_event_report_csv()")
+            print(f"start  self._save_empty_buckets_csv()")
+            self._save_empty_buckets_csv()
+            print( f"done  self._save_empty_buckets_csv()")
         except Exception as e:
-            print(f"Error  self._save_analytics_event_report_csv(): {str(e)}")
+            print(f"Error  self._save_empty_buckets_csv(): {str(e)}")
 
         # Upload csvs
         try:
@@ -148,7 +150,7 @@ class DuploAwsAnalyticsEtl:
                 "file_size": self.convert_size(s3_file.file_size),
                 "bucket_name": s3_file.bucket_name,
                 "s3_object_key": s3_file.s3_object_key,
-                "file_date": s3_file.file_date.strftime('%Y-%m-%d %H:%M:%S')
+                "last_modified": s3_file.last_modified
             } for s3_file in self.analytics_event_report_files])
             sum_df = pd.read_json(StringIO(analytics_event_report_json))
             sum_df.to_csv(analytics_event_report_file, index=False, header=True)

@@ -15,6 +15,7 @@ class AnalyticsS3File:
         self.file_name = os.path.basename(file_name)
         self.s3_object_key = file_name
         self.file_size = file_size
+        self.last_modified = file_date.strftime('%Y-%m-%d %H:%M:%S')
         self.file_date = file_date
         self.local_file_name = data_folder + str(index) + "-" + os.path.basename(file_name)
         print(self.index, self.local_file_name, "size", file_size, "file_date", file_date, "bucket", bucket_name, "s3-file", self.s3_object_key)
@@ -22,7 +23,18 @@ class AnalyticsS3File:
 class DuploAwsAnalyticsEtl:
 
     def __init__(self):
-        self.event="useraction"
+        # event
+        self.event = "useraction"
+        self.s3_dest_sub_folder = "segment"
+
+        # src s3
+        self.s3_src_file_prefix = "data/" + self.event + "/" + self.s3_dest_sub_folder
+        self.s3_src_bucket_prefix = "duplo-analytics-"
+        # dest s3
+        self.dest_s3_bucket = "duplo-" + self.event + "-reports"
+        self.s3_dest_file_prefix = "data/" + self.s3_dest_sub_folder
+        self.s3_dest_reports_folder = "reports/"
+
         self.file_count = self.file_max_count = 10000000
         self.file_count = 0
         self.out_folder = "/tmp/" + self.event
@@ -34,14 +46,13 @@ class DuploAwsAnalyticsEtl:
         self.analytics_event_report_files = []
         self.empty_buckets = []
 
-    def etl_on_customer_analytics_event_s3_buckets(self, s3_dest_sub_folder):
+    def etl_on_customer_analytics_event_s3_buckets(self):
         # src s3
         self.s3_src_file_prefix = "data/" + self.event + "/all"
         self.s3_src_bucket_prefix = "duplo-analytics-"
         # dest s3
-        self.s3_dest_sub_folder = s3_dest_sub_folder
         self.dest_s3_bucket = "duplo-" + self.event + "-reports"
-        self.s3_dest_file_prefix = "data/" + s3_dest_sub_folder
+        self.s3_dest_file_prefix = "data/" + self.s3_dest_sub_folder
         self.s3_dest_reports_folder = "reports/"
         self.cleanup_events_cutoff_date = datetime.now() - timedelta(days=3)
 
@@ -73,11 +84,11 @@ class DuploAwsAnalyticsEtl:
 
         # save processed files
         try:
-            print(f"start  self._save_analytics_event_report_csv()")
-            self._save_analytics_event_report_csv()
-            print( f"done  self._save_analytics_event_report_csv()")
+            print(f"start  self._save_empty_buckets_csv()")
+            self._save_empty_buckets_csv()
+            print( f"done  self._save_empty_buckets_csv()")
         except Exception as e:
-            print(f"Error  self._save_analytics_event_report_csv(): {str(e)}")
+            print(f"Error  self._save_empty_buckets_csv(): {str(e)}")
 
         # Upload csvs
         try:
@@ -130,15 +141,15 @@ class DuploAwsAnalyticsEtl:
                 'Key': s3_analytics_event_file.s3_object_key
             }
             self.s3_client.copy_object(CopySource=src_s3_object_key, Bucket=self.dest_s3_bucket, Key=dest_s3_object_key)
-            print(f"File copied successfully from {s3_analytics_event_file.bucket_name}/{s3_analytics_event_file.s3_object_key} to {self.dest_s3_bucket}/{dest_s3_object_key}")
+            print(f"File copied successfully {s3_analytics_event_file.bucket_name}/{s3_analytics_event_file.s3_object_key} to {self.dest_s3_bucket}/{dest_s3_object_key}")
         except Exception as e:
-            print(f"Error copying file: {str(e)}")
+            print(f"Error copying  {s3_analytics_event_file.bucket_name}/{s3_analytics_event_file.s3_object_key} to {self.dest_s3_bucket}/{dest_s3_object_key} error: {str(e)}")
 
         try:
-            #self.s3_client.delete_object(Bucket=s3_analytics_event_file.bucket_name, Key=s3_analytics_event_file.s3_object_key)
-            print(f"File copied successfully from {s3_analytics_event_file.bucket_name}/{s3_analytics_event_file.s3_object_key} to {self.dest_s3_bucket}/{dest_s3_object_key}")
+            self.s3_client.delete_object(Bucket=s3_analytics_event_file.bucket_name, Key=s3_analytics_event_file.s3_object_key)
+            print(f"File deleted successfully {s3_analytics_event_file.bucket_name}/{s3_analytics_event_file.s3_object_key}")
         except Exception as e:
-            print(f"Error deleting file: {str(e)}")
+            print(f"Error deleting file: {s3_analytics_event_file.bucket_name}/{s3_analytics_event_file.s3_object_key} error: {str(e)}")
 
     def _cleanup_events(self):
         # list
@@ -156,7 +167,7 @@ class DuploAwsAnalyticsEtl:
                     if file_date > self.cleanup_events_cutoff_date and "json" in file_name:
                         print("found file_name ", file_name)
                         try:
-                            #self.s3_client.delete_object(Bucket=self.dest_s3_bucket, Key=file_name)
+                            self.s3_client.delete_object(Bucket=self.dest_s3_bucket, Key=file_name)
                             print(f"File copied successfully from {self.dest_s3_bucket}/{file_name}")
                         except Exception as e:
                             print(f"Error _cleanup_event {file_date.file_date.strftime('%Y-%m-%d %H:%M:%S')}"
@@ -231,9 +242,9 @@ class DuploAwsAnalyticsEtl:
 
 def handler(event, context):
     aws_analytics_event_reports = DuploAwsAnalyticsEtl()
-    aws_analytics_event_reports.etl_on_customer_analytics_event_s3_buckets("aws")
+    aws_analytics_event_reports.etl_on_customer_analytics_event_s3_buckets()
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     return f"total reports: {str(aws_analytics_event_reports.file_count)}, start: {aws_analytics_event_reports.start}, end: {timestamp}, v:{sys.version} !"
 
 
-handler(None, None)
+#handler(None, None)
