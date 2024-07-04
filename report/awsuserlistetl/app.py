@@ -125,14 +125,25 @@ class DuploAwsAnalyticsEtl:
                   + " src: " + src_s3_object_key
                   + " dest: " + dest_s3_object_key)
         try:
-            copy_source = {
-                'Bucket': s3_analytics_event_file.bucket_name,
-                'Key': s3_analytics_event_file.s3_object_key
-            }
-            self.s3_client.copy_object(CopySource=src_s3_object_key, Bucket=self.dest_s3_bucket, Key=dest_s3_object_key)
-            print(f"File copied successfully from {s3_analytics_event_file.bucket_name}/{s3_analytics_event_file.s3_object_key} to {self.dest_s3_bucket}/{dest_s3_object_key}")
+            self.s3_client.download_file(s3_analytics_event_file.bucket_name, s3_analytics_event_file.s3_object_key,
+                                         s3_analytics_event_file.local_file_name)
+            with open(s3_analytics_event_file.local_file_name, "rb") as f:
+                self.s3_client.upload_fileobj(f, self.dest_s3_bucket, dest_s3_object_key)
+            print(s3_analytics_event_file.local_file_name)
+            self.delete_local_file(s3_analytics_event_file.local_file_name)
         except Exception as e:
-            print(f"Error copying file: {str(e)}")
+            print(
+                f"Error _process_s3_analytics_event_file copying  {s3_analytics_event_file.bucket_name}/{s3_analytics_event_file.s3_object_key} to {self.dest_s3_bucket}/{dest_s3_object_key} error: {str(e)}")
+
+        # try:
+        #     copy_source = {
+        #         'Bucket': s3_analytics_event_file.bucket_name,
+        #         'Key': s3_analytics_event_file.s3_object_key
+        #     }
+        #     self.s3_client.copy_object(CopySource=src_s3_object_key, Bucket=self.dest_s3_bucket, Key=dest_s3_object_key)
+        #     print(f"File copied successfully from {s3_analytics_event_file.bucket_name}/{s3_analytics_event_file.s3_object_key} to {self.dest_s3_bucket}/{dest_s3_object_key}")
+        # except Exception as e:
+        #     print(f"Error copying file: {str(e)}")
 
     def _save_empty_buckets_csv(self):
         empty_buckets_file = self.analytics_event_csv_folder + "aws_events_analytics_empty_buckets.csv"

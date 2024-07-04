@@ -8,8 +8,6 @@ import shutil
 from io import StringIO
 from datetime import datetime, time, timedelta
 import pytz
-import re
-import uuid
 
 class S3BillingFile:
     def __init__(self, index, bucket_name, file_name, file_size, file_date, data_folder):
@@ -20,12 +18,8 @@ class S3BillingFile:
         self.last_modified = file_date.strftime('%Y-%m-%d %H:%M:%S')
         self.file_date = file_date
         self.local_file_name = data_folder + str(index) + "-" + os.path.basename(file_name)
-        self.file_name = os.path.basename(file_name)
-        self.host = ""
-        self.customer = ""
-        self.customer_id = ""
-        self.aws_account_id = ""
         print(self.file_index, self.local_file_name, "size", file_size, "bucket", bucket_name, "s3-file", self.s3_object_key)
+
 
 
 class AwsBillingReports:
@@ -45,49 +39,14 @@ class AwsBillingReports:
         self.cleanup_events_cutoff_date = datetime.now() - timedelta(days=10)
         self.cleanup_events_cutoff_date = self.cleanup_events_cutoff_date.replace(tzinfo=pytz.utc)
 
-    def _checkNotManuallyUploaded(self, json_file):
+    def _create_csvs(self, json_file):
         with open(json_file) as f:
             data = json.load(f)
-        if "data" in data and "AwsAccountId" in data and "Host" in data and "CustomerName" in data :
-            return True
-        return False
-
-    def fixManualVersion2(self, data, json_file):
-        if "data" in data:
-            return data
-        pattern = r'(\d+)-(.+)-(\d+)\.json'
-        match = re.match(pattern, os.path.basename(json_file))
-        if match:
-            customerId = match.group(1)
-            envName = match.group(2)
-            awsAccountId = match.group(3)
-            current_datetime = datetime.utcnow()
-            formatted_date = current_datetime.strftime('%Y-%m-%dT%H:%M:%S.%f')[:-3] + current_datetime.strftime('.%f')[-3:] + 'Z'
-            return  {
-                "data": {"Monthly": data["Monthly"], "Version":  data["Version"], "LastFetchedDate":  data["LastFetchedDate"]},
-                "SentAt": formatted_date, #"2024-07-03T04:30:34.5802030Z",
-                "Type": "track",
-                "MessageId": uuid.uuid4(), #"09a690ec-b812-4f01-b008-05b0ee8bfe81",
-                "Event": "billing",
-                "Host": envName,
-                "CustomerName": envName,
-                "CustomerId": customerId,
-                "AwsAccountId": awsAccountId
-            }
-
-    def _create_csvs(self, data, s3_billing_file):
-        json_file =  s3_billing_file.local_file_name
-        # with open(json_file) as f:
-        #     data = json.load(f)
         host = data["Host"]
         customer = data["CustomerName"]
         customer_id = data["CustomerId"]
         aws_account_id = data["AwsAccountId"]
         monthly_data = data['data']['Monthly']
-        s3_billing_file.host = host
-        s3_billing_file.customer = customer
-        s3_billing_file.customer_id = customer_id
-        s3_billing_file.aws_account_id = aws_account_id
         monthly_bill = []
         services_bill = []
         tenants_bill = []
@@ -282,12 +241,8 @@ class AwsBillingReports:
             "file_index": s3_file.file_index,
             "last_modified": s3_file.last_modified,
             "file_size": self.convert_size(s3_file.file_size),
-            "host": s3_file.host,
-            "customer_id": s3_file.customer_id,
-            "customer": s3_file.customer_id,
-            "aws_account_id": s3_file.aws_account_id,
             "bucket_name": s3_file.bucket_name,
-            "s3_object_key": s3_file.file_name
+            "s3_object_key": s3_file.s3_object_key
         } for s3_file in self.billing_report_files])
         sum_df = pd.read_json(StringIO(billing_report_json))
         sum_df.to_csv(billing_report_file, index=False, header=True)
@@ -299,15 +254,7 @@ class AwsBillingReports:
               + " " + s3_billing_file.s3_object_key + " "
               + s3_billing_file.local_file_name)
         self.s3_client.download_file(s3_billing_file.bucket_name, s3_billing_file.s3_object_key, s3_billing_file.local_file_name)
-        with open(s3_billing_file.local_file_name) as f:
-            data = json.load(f)
-        if "Version" in data and data["Version"]  == 2:
-            data_new = self.fixManualVersion2(data, s3_billing_file.local_file_name)
-            self._create_csvs(data_new, s3_billing_file)
-        elif "Version" in data and data["Version"]  == 1:
-            self._log(self.file_count, "skip manual file version 1 " + s3_billing_file.bucket_name  + " " + s3_billing_file.s3_object_key + " "  + s3_billing_file.local_file_name)
-        else:
-            self._create_csvs(data, s3_billing_file)
+        self._create_csvs(s3_billing_file.local_file_name)
         self.delete_local_file(s3_billing_file.local_file_name)
 
     def recreate_local_folder(self, folder_path):
@@ -335,58 +282,6 @@ class AwsBillingReports:
         # timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         # print(f"{timestamp} - {message}", *args, **kwargs)
         print(f"{message}", *args, **kwargs)
-
-#### older billing csv
-    def convertDatetoiso_version1(self, date_str):
-        month_replacements = {
-            "Jan": "01", "Feb": "02", "Mar": "03", "Apr": "04", "May": "05", "Jun": "06",
-            "Jul": "07", "Aug": "08", "Sept": "09", "Sep": "09", "Oct": "10", "Nov": "11", "Dec": "12"
-        }
-
-        # Split the date string and correct the month abbreviation if necessary
-        monthstr, year = date_str.split()
-        month = month_replacements.get(monthstr)
-
-        # Reassemble the corrected date string "YYYY-MM-DDTHH:MM:SS"
-        corrected_date_str = f"{year}-{month}-01T00:00:00"
-        return corrected_date_str
-
-    def processCsv_version1(self, customer, jsonfile, outfolder):
-        outCustfolder = outfolder + "/" + customer
-        os.makedirs(outCustfolder, exist_ok=True)
-        os.makedirs(outCustfolder + "/json", exist_ok=True)
-        df = pd.read_csv(jsonfile)
-        df.rename(columns={df.columns[0]: "Service"}, inplace=True)
-        df.rename(columns={df.columns[1]: "Empty"}, inplace=True)
-        df.columns = df.columns
-        df.drop(columns=['Empty'], inplace=True)
-
-        monthly= {}
-        services={}
-        for index, row in df.iterrows():
-            print(index, df.columns[0], row[0],  df.columns[1],  row[1])
-            for col in range(1, len(df.columns) - 1):
-                month =  self.convertDatetoiso_version1(df.columns[col])
-                if index < 4:
-                        if month not in monthly:
-                            monthly[month] = {"StartDate": month, "Customer": customer}
-                        monthly[month][row[0]] = row[col]
-                else:
-                        if row[col] > 0:
-                            services[month+"-"+row[0]] = {"StartDate": month, "Customer": customer, "Service": row[0], "Total": row[col]}
-        #print("monthlyvals", json.dumps(list(monthly.values())))
-        servicesVal = list(services.values())
-        #print("servicesvals", json.dumps(servicesVal))
-
-        servicesValuesDf = pd.DataFrame(servicesVal)
-        servicesValuesDf = servicesValuesDf.sort_values(by='StartDate', ascending=False)
-        servicesValuesDf.to_csv(outCustfolder + "/services.csv", index=False)
-        servicesValuesDf.to_json(outCustfolder + "/json/services.json", orient='records', lines=False, indent=4)
-
-        monthlyDf = pd.DataFrame(list(monthly.values()))
-        monthlyDf = monthlyDf.sort_values(by='StartDate', ascending=False)
-        monthlyDf.to_csv(outCustfolder + "/monthly.csv", index=False)
-        monthlyDf.to_json(outCustfolder + "/json/monthly.json", orient='records', lines=False, indent=4)
 
 def handler(event, context):
     aws_billing_reports = AwsBillingReports()

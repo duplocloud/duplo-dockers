@@ -17,7 +17,7 @@ python aws-billing-reports.py
  ```
  aws --region us-west-2 ecr get-login-password | docker login --username AWS --password-stdin xxx.dkr.ecr.us-west-2.amazonaws.com
 
-ver=billetl:v27
+ver=custetl:v25
 docker build -t $ver .
 docker tag  $ver   xxx.dkr.ecr.us-west-2.amazonaws.com/$ver
 docker push xxx.dkr.ecr.us-west-2.amazonaws.com/$ver

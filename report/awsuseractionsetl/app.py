@@ -27,14 +27,6 @@ class DuploAwsAnalyticsEtl:
         self.event = "useraction"
         self.s3_dest_sub_folder = "segment"
 
-        # src s3
-        self.s3_src_file_prefix = "data/" + self.event + "/" + self.s3_dest_sub_folder
-        self.s3_src_bucket_prefix = "duplo-analytics-"
-        # dest s3
-        self.dest_s3_bucket = "duplo-" + self.event + "-reports"
-        self.s3_dest_file_prefix = "data/" + self.s3_dest_sub_folder
-        self.s3_dest_reports_folder = "reports/"
-
         self.file_count = self.file_max_count = 10000000
         self.file_count = 0
         self.out_folder = "/tmp/" + self.event
@@ -48,7 +40,7 @@ class DuploAwsAnalyticsEtl:
 
     def etl_on_customer_analytics_event_s3_buckets(self):
         # src s3
-        self.s3_src_file_prefix = "data/" + self.event + "/all"
+        self.s3_src_file_prefix =  "data/" + self.event + "/all"
         self.s3_src_bucket_prefix = "duplo-analytics-"
         # dest s3
         self.dest_s3_bucket = "duplo-" + self.event + "-reports"
@@ -136,20 +128,19 @@ class DuploAwsAnalyticsEtl:
                   + " src: " + src_s3_object_key
                   + " dest: " + dest_s3_object_key)
         try:
-            copy_source = {
-                'Bucket': s3_analytics_event_file.bucket_name,
-                'Key': s3_analytics_event_file.s3_object_key
-            }
-            self.s3_client.copy_object(CopySource=src_s3_object_key, Bucket=self.dest_s3_bucket, Key=dest_s3_object_key)
-            print(f"File copied successfully {s3_analytics_event_file.bucket_name}/{s3_analytics_event_file.s3_object_key} to {self.dest_s3_bucket}/{dest_s3_object_key}")
+            self.s3_client.download_file(s3_analytics_event_file.bucket_name, s3_analytics_event_file.s3_object_key, s3_analytics_event_file.local_file_name)
+            with open(s3_analytics_event_file.local_file_name, "rb") as f:
+                self.s3_client.upload_fileobj(f, self.dest_s3_bucket, dest_s3_object_key)
+            print(s3_analytics_event_file.local_file_name)
+            self.delete_local_file(s3_analytics_event_file.local_file_name)
         except Exception as e:
-            print(f"Error copying  {s3_analytics_event_file.bucket_name}/{s3_analytics_event_file.s3_object_key} to {self.dest_s3_bucket}/{dest_s3_object_key} error: {str(e)}")
+            print(f"Error _process_s3_analytics_event_file copying  {s3_analytics_event_file.bucket_name}/{s3_analytics_event_file.s3_object_key} to {self.dest_s3_bucket}/{dest_s3_object_key} error: {str(e)}")
 
         try:
             self.s3_client.delete_object(Bucket=s3_analytics_event_file.bucket_name, Key=s3_analytics_event_file.s3_object_key)
-            print(f"File deleted successfully {s3_analytics_event_file.bucket_name}/{s3_analytics_event_file.s3_object_key}")
+            print(f"_process_s3_analytics_event_file deleted successfully {s3_analytics_event_file.bucket_name}/{s3_analytics_event_file.s3_object_key}")
         except Exception as e:
-            print(f"Error deleting file: {s3_analytics_event_file.bucket_name}/{s3_analytics_event_file.s3_object_key} error: {str(e)}")
+            print(f"Error _process_s3_analytics_event_file deleting file: {s3_analytics_event_file.bucket_name}/{s3_analytics_event_file.s3_object_key} error: {str(e)}")
 
     def _cleanup_events(self):
         # list
