@@ -8,7 +8,7 @@
 * install requirments and generate reports.
 ```bash
 pip install -r requirments.txt
-python aws-billing-reports.py
+ 
 ```
 
 
@@ -27,5 +27,5 @@ echo xxx.dkr.ecr.us-west-2.amazonaws.com/$ver
 
 ## Genergate cumulative csv reports
 * lambda
-* cloudwatch rule with every 5 hours execution
+* cloudwatch rule with every 10 hours execution
 * 
