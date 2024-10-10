@@ -49,7 +49,7 @@ class DuploAwsAnalyticsEtl:
 
     def etl_on_customer_analytics_event_s3_buckets(self ):
 
-        self.cleanup_events_cutoff_date = datetime.now() - timedelta(days=3)
+        self.cleanup_events_cutoff_date = datetime.now() - timedelta(days=15)
 
         # log
         self._log(self.file_count, "temp_out_folder ", self.temp_out_folder)

@@ -24,8 +24,8 @@ class DuploAwsAnalyticsEtl:
 
     def __init__(self):
         # event
-        self.event="usagedata"
-        self.s3_dest_sub_folder = "segment"
+        self.event="licenseusage"
+        self.s3_dest_sub_folder = "all"
 
         # src s3
         self.s3_src_file_prefix = "data/" + self.event + "/" + self.s3_dest_sub_folder
@@ -33,7 +33,7 @@ class DuploAwsAnalyticsEtl:
         # dest s3
         self.dest_s3_bucket = "duplo-" + self.event + "-reports"
         self.s3_dest_file_prefix = "data/" + self.s3_dest_sub_folder
-        self.s3_dest_reports_folder = "data/reports/"
+        self.s3_dest_reports_folder = "reports/"
 
         self.file_count = self.file_max_count = 10000000
         self.file_count = 0
@@ -41,6 +41,7 @@ class DuploAwsAnalyticsEtl:
         self.temp_out_folder = self.out_folder + "/reports_temp/"
         self.analytics_event_csv_folder = self.out_folder + "/reports_combined/"
         self.data_folder = self.out_folder + "/data/"
+        self.s3_combined_file = self.data_folder + "/s3_combined_file.json"
         self.start = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         self.s3_client = boto3.client('s3')
         self.analytics_event_report_files = []
@@ -61,6 +62,7 @@ class DuploAwsAnalyticsEtl:
         self.recreate_local_folder(self.analytics_event_csv_folder)
         self.recreate_local_folder(self.data_folder)
 
+        self._start_s3_combined_file(self.s3_combined_file)
         # list_buckets
         try:
             print(f"start self._do_etls()")
@@ -69,6 +71,7 @@ class DuploAwsAnalyticsEtl:
         except Exception as e:
             print(f"Error self._do_etls(): {str(e)}")
 
+        self._end_s3_combined_file(self.s3_combined_file)
         # save empty buckets
         try:
             print(f"start  self._save_analytics_event_report_csv()")
@@ -87,15 +90,53 @@ class DuploAwsAnalyticsEtl:
 
         # Upload csvs
         try:
-            print("start upload_s3_folder")
-            self._upload_csv_files()
-            print(f"done  self.upload_csv_files()")
+            print("start _save_analytics_event_s3_combined_file")
+            self._save_analytics_event_s3_combined_file()
+            print(f"done  self._save_analytics_event_s3_combined_file()")
         except Exception as e:
-            print(f"Error self.upload_csv_files(): {str(e)}")
+            print(f"Error self._save_analytics_event_s3_combined_file(): {str(e)}")
 
+
+
+    def _start_s3_combined_file(self, output_file):
+        try:
+            print(f"Started writing to {output_file}.")
+        except IOError:
+            print(f"Error opening or writing to {output_file}.")
+
+    def _write_env_to_s3_combined_file(self, local_file_name, output_file):
+        try:
+            if os.path.exists(output_file) and os.path.getsize(output_file) > 0:
+                with open(output_file, 'a') as f:
+                    f.write(",")
+            else:
+                with open(output_file, 'w') as f:
+                    f.write("[\n")
+
+            with open(local_file_name, 'r') as f:
+                data = json.load(f)
+
+            with open(output_file, 'a') as f:
+                json.dump(data, f, indent=2)
+
+
+            print(f"Appended content from {local_file_name} to {output_file}.")
+        except IOError:
+            print(f"Error opening or reading {local_file_name}.")
+        except json.JSONDecodeError:
+            print(f"Error decoding JSON from {local_file_name}.")
+
+    def _end_s3_combined_file(self, output_file):
+        try:
+            with open(output_file, 'a') as f:
+                f.write("]\n")
+            print(f"Ended writing to {output_file}.")
+        except IOError:
+            print(f"Error appending to {output_file}.")
 
 
     def _do_etls(self):
+
         response = self.s3_client.list_buckets()
         buckets = [bucket['Name'] for bucket in response['Buckets'] if
                    bucket['Name'].startswith(self.s3_src_bucket_prefix)]
@@ -118,32 +159,28 @@ class DuploAwsAnalyticsEtl:
                         self.analytics_event_report_files.append(s3_analytics_event_file)
 
     def _process_s3_analytics_event_file(self, s3_analytics_event_file):
-        dest_s3_object_key = "data/" + self.s3_dest_sub_folder + "/" + s3_analytics_event_file.file_name
         src_s3_object_key = s3_analytics_event_file.bucket_name + "/" + s3_analytics_event_file.s3_object_key
         self._log(s3_analytics_event_file.index,
                   "_process_s3_analytics_event_file "
-                  + " src: " + src_s3_object_key
-                  + " dest: " + dest_s3_object_key)
+                  + " src: " + src_s3_object_key)
         try:
             self.s3_client.download_file(s3_analytics_event_file.bucket_name, s3_analytics_event_file.s3_object_key,
                                          s3_analytics_event_file.local_file_name)
-            with open(s3_analytics_event_file.local_file_name, "rb") as f:
-                self.s3_client.upload_fileobj(f, self.dest_s3_bucket, dest_s3_object_key)
-            print(s3_analytics_event_file.local_file_name)
+            self._write_env_to_s3_combined_file(s3_analytics_event_file.local_file_name, self.s3_combined_file)
             self.delete_local_file(s3_analytics_event_file.local_file_name)
         except Exception as e:
-            print(
-                f"Error _process_s3_analytics_event_file copying  {s3_analytics_event_file.bucket_name}/{s3_analytics_event_file.s3_object_key} to {self.dest_s3_bucket}/{dest_s3_object_key} error: {str(e)}")
+            print(f"Error _process_s3_analytics_event_file copying  {s3_analytics_event_file.bucket_name}/{s3_analytics_event_file.s3_object_key} error: {str(e)}")
 
-        # try:
-        #     copy_source = {
-        #         'Bucket': s3_analytics_event_file.bucket_name,
-        #         'Key': s3_analytics_event_file.s3_object_key
-        #     }
-        #     self.s3_client.copy_object(CopySource=src_s3_object_key, Bucket=self.dest_s3_bucket, Key=dest_s3_object_key)
-        #     print(f"File copied successfully from {s3_analytics_event_file.bucket_name}/{s3_analytics_event_file.s3_object_key} to {self.dest_s3_bucket}/{dest_s3_object_key}")
-        # except Exception as e:
-        #     print(f"Error copying file: {str(e)}")
+    def _save_analytics_event_s3_combined_file(self, ):
+        dest_s3_object_key = "data/" + self.s3_dest_sub_folder + "/licenseusage-report.json"
+        self._log( "_save_analytics_event_s3_combined_file "
+                  + " src: " + self.s3_combined_file
+                  + " dest: " + dest_s3_object_key)
+        try:
+            with open(self.s3_combined_file, "rb") as f:
+                self.s3_client.upload_fileobj(f, self.dest_s3_bucket, dest_s3_object_key)
+        except Exception as e:
+            print(f"Error _save_analytics_event_s3_combined_file copying  {self.dest_s3_bucket}/{dest_s3_object_key.s3_object_key}  error: {str(e)}")
 
     def _save_empty_buckets_csv(self):
         empty_buckets_file = self.analytics_event_csv_folder + "aws_events_analytics_empty_buckets.csv"
